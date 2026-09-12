@@ -1,0 +1,47 @@
+/*
+ * NexaStack design tokens — raw values.
+ *
+ * This is the ONLY file in apps/web allowed to contain hex colour values. Components use the
+ * semantic Tailwind classes mapped in globals.css (bg-surface, text-secondary, border-default…).
+ * Source of truth: root CLAUDE.md section 7.1. Change a value here and nowhere else.
+ *
+ * `.light` is a scope as well as `:root`, so a subtree can be forced to light inside a dark page.
+ */
+
+:root,
+.light {
+  color-scheme: light;
+
+  --nx-background: #f8fafc;
+  --nx-background-alt: #f1f5f9;
+  --nx-surface: #ffffff;
+  --nx-text-primary: #0f172a;
+  --nx-text-secondary: #475569;
+  --nx-border: #dce4ee;
+  --nx-primary-blue: #1463ff;
+  /* Cyan is 2.23:1 on the light background: decorative use only, never text. */
+  --nx-cyan: #08b7ed;
+  --nx-violet: #5530d9;
+  --nx-success: #15803d;
+  --nx-error: #dc2626;
+  /* Text/icons on a primary-blue fill: 4.93:1 */
+  --nx-on-primary: #ffffff;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --nx-background: #080d1a;
+  --nx-background-alt: #0d1424;
+  --nx-surface: #111a2e;
+  --nx-text-primary: #f8fafc;
+  --nx-text-secondary: #a8b4c7;
+  --nx-border: #26334a;
+  --nx-primary-blue: #4d8bff;
+  --nx-cyan: #25c7f5;
+  --nx-violet: #7957f2;
+  --nx-success: #4ade80;
+  --nx-error: #f87171;
+  /* White on #4D8BFF is only 3.25:1, so dark mode uses the dark background: 5.96:1 */
+  --nx-on-primary: #080d1a;
+}

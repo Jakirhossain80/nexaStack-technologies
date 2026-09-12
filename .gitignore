@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build output
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# Environment — commit only the .env.example files
+.env
+.env.*
+!.env.example
+
+# Claude Code local overrides
+.claude/settings.local.json
+
+# Logs and tooling
+*.log
+npm-debug.log*
+pnpm-debug.log*
+coverage/
+.vercel/
+.next-profiles/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

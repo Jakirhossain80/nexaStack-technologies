@@ -1,0 +1,632 @@
+# CLAUDE.md — NexaStack Technologies
+
+Project context for Claude Code. Read this fully before making changes.
+
+`AGENTS.md` is a symlink to this file. Edit only `CLAUDE.md`.
+
+---
+
+## 1. Project overview
+
+**NexaStack Technologies** is a founder-led web development firm based in Dhaka,
+Bangladesh. This repository is the firm's own website: a public marketing site plus an
+admin interface for managing content, enquiries and quotation requests.
+
+The site is both a business asset and a demonstration of the firm's technical ability.
+Code quality, accessibility and performance are therefore part of the product, not
+optional polish.
+
+**Tagline:** We Build Better Websites
+**Positioning:** A capable founder-led development firm. The copy and design must never
+imply a large corporation or a team that does not exist.
+
+---
+
+## 2. Golden rules
+
+1. **Follow the design tokens in section 7 exactly.** Never invent a colour, radius or
+   spacing value. If a needed token is missing, ask before adding it.
+2. **Never redesign parts of the UI you were not asked to change.** Targeted changes only.
+3. **Never add a dependency without asking first.** State what it is, why the existing
+   stack cannot do it, and its size.
+4. **Validation schemas live in `packages/shared` and are imported by both apps.** Never
+   duplicate a schema.
+5. **Accessibility requirements in section 14 are non-negotiable**, not a later pass.
+6. **Preserve existing functionality.** When editing a file, change what was asked and
+   leave the rest alone.
+7. **Ask before any destructive operation** — deleting files, rewriting migrations,
+   force-pushing, dropping collections.
+8. Use **plan mode for any change spanning more than two files.**
+
+---
+
+## 3. Repository structure
+
+pnpm workspace monorepo.
+
+```
+nexastack/
+├── CLAUDE.md                    # this file (canonical)
+├── AGENTS.md                    # symlink → CLAUDE.md
+├── README.md                    # installation and deployment
+├── pnpm-workspace.yaml
+├── .claude/
+│   ├── settings.json            # committed permissions
+│   └── commands/                # custom slash commands
+├── apps/
+│   ├── web/                     # Next.js App Router (public site + admin UI)
+│   │   ├── app/
+│   │   │   ├── (marketing)/     # public route group
+│   │   │   ├── (admin)/         # admin route group, auth-guarded
+│   │   │   ├── api/             # Route Handlers (see 6.2 for what belongs here)
+│   │   │   ├── layout.tsx
+│   │   │   ├── sitemap.ts
+│   │   │   └── robots.ts
+│   │   ├── components/
+│   │   │   ├── ui/              # primitives: Button, Card, Input, Badge
+│   │   │   ├── sections/        # page sections: Hero, ServicesGrid, CTABand
+│   │   │   ├── layout/          # Navbar, Footer, ThemeToggle
+│   │   │   └── admin/           # admin-only components
+│   │   ├── lib/                 # client utilities, fetchers, helpers
+│   │   ├── config/
+│   │   │   └── company.ts       # single source for company facts (section 4)
+│   │   └── styles/
+│   └── api/                     # Express REST API
+│       └── src/
+│           ├── routes/          # route definitions only
+│           ├── controllers/     # request/response handling
+│           ├── services/        # business logic
+│           ├── models/          # Mongoose schemas
+│           ├── middleware/      # auth, RBAC, rate limit, error handler
+│           ├── lib/             # mailer, cloudinary, logger
+│           └── index.ts
+└── packages/
+    └── shared/                  # Zod schemas + TypeScript types used by BOTH apps
+```
+
+Each app has its own `CLAUDE.md` with app-specific conventions. Read the nearest one.
+
+---
+
+## 4. Company facts
+
+These values live in **`apps/web/config/company.ts`** and are imported everywhere —
+footer, contact page, JSON-LD, email templates, legal pages. **Never hardcode them into a
+component.**
+
+| Field | Value |
+|---|---|
+| Legal name | NexaStack Technologies |
+| Tagline | We Build Better Websites |
+| Founded | 2026 |
+| Founder | Md. Jakir Hossain, CEO |
+| Address | House 14, Road 06, Uttara, Dhaka 1230, Bangladesh |
+| Phone (display) | +880 1712-119253 |
+| Phone (`tel:`) | `tel:+8801712119253` |
+| WhatsApp link | `https://wa.me/8801712119253` |
+| General email | nexastack@mail.com *(placeholder — see section 18)* |
+| Hours | 10:00–18:00, six days a week |
+| Weekly holiday | Friday |
+| Time zone | Asia/Dhaka (UTC+6) |
+| GitHub | https://github.com/Jakirhossain80 |
+| LinkedIn | https://www.linkedin.com/in/jakir-hossain-dev |
+
+**Phone format matters.** Bangladesh's country code is `+880`. The leading `0` in
+`01712119253` is the domestic trunk prefix and is dropped internationally. The WhatsApp
+click-to-chat URL requires digits only: `8801712119253`. `88001712119253` will not resolve.
+
+---
+
+## 5. Tech stack
+
+| Layer | Choice |
+|---|---|
+| Framework | Next.js, App Router |
+| UI | React + TypeScript (strict mode) |
+| Styling | Tailwind CSS |
+| Monorepo | pnpm workspaces |
+| Backend | Node.js + Express.js REST API |
+| Database | MongoDB Atlas + Mongoose |
+| Auth | Email/password, bcrypt, JWT in HTTP-only cookies |
+| Forms | React Hook Form + Zod + @hookform/resolvers |
+| Server state | native `fetch` (public SSR), TanStack Query (admin only) |
+| Media | Cloudinary, `next/image` |
+| Email | Transactional provider (Resend / Postmark / Brevo — TBD) |
+| Spam | Cloudflare Turnstile + express-rate-limit |
+| Logging | Pino |
+| Monitoring | Sentry, uptime service, health-check endpoints |
+| API docs | OpenAPI / Swagger |
+| Hosting | Vercel (web), Render (api), Atlas (db), Cloudinary (media) |
+
+**Record exact pinned versions here after `pnpm install`.** Do not assume API shapes from
+training data — when unsure about a Next.js, Tailwind or Mongoose API, fetch the current
+docs.
+
+### Pinned versions (installed 2026-09-13, Node 22.23.1, pnpm 11.5.2)
+
+All versions are exact pins. `zod`, `typescript` and `@types/node` are pinned once in the
+`catalog:` of `pnpm-workspace.yaml`.
+
+| Workspace | Package | Version |
+|---|---|---|
+| root (dev) | typescript | 6.0.3 |
+| root (dev) | eslint / @eslint/js | 9.39.5 |
+| root (dev) | typescript-eslint | 8.70.0 |
+| root (dev) | eslint-config-next | 16.3.5 |
+| root (dev) | eslint-config-prettier | 10.1.8 |
+| root (dev) | globals | 17.12.0 |
+| root (dev) | prettier | 3.9.6 |
+| root (dev) | prettier-plugin-tailwindcss | 0.8.1 |
+| shared | zod | 4.6.2 |
+| web | next | 16.3.5 |
+| web | react / react-dom | 19.3.0 |
+| web | tailwindcss / @tailwindcss/postcss | 4.3.3 |
+| web | clsx | 2.1.1 |
+| web | tailwind-merge | 3.7.0 |
+| web (dev) | @types/react / @types/react-dom | 19.3.0 |
+| api | express | 5.2.1 |
+| api | mongoose | 9.10.0 |
+| api | helmet | 8.3.0 |
+| api | cors | 2.8.6 |
+| api | cookie-parser | 1.4.7 |
+| api | express-rate-limit | 8.7.0 |
+| api | pino | 10.3.1 |
+| api | pino-http | 11.0.0 |
+| api (dev) | tsx | 4.23.13 |
+| api (dev) | pino-pretty | 13.1.3 |
+| api (dev) | @types/express | 5.0.6 |
+| api (dev) | @types/cors | 2.8.19 |
+| api (dev) | @types/cookie-parser | 1.4.10 |
+| web, api (dev) | @types/node | 22.20.2 |
+
+**Held back deliberately:** TypeScript 7 (`typescript-eslint` 8.70 supports `<6.1.0`) and
+ESLint 10 (`eslint-config-next` 16.3.5 bundles `eslint-plugin-react` 7.37.5, whose peer range
+stops at ESLint 9). Revisit both when those packages widen their ranges.
+
+### Explicitly not used
+
+- **Redux, Zustand, Jotai, MobX** — URL search params and TanStack Query cover the state
+  needs. Do not introduce a global store without explicit approval.
+- **CSS-in-JS** (styled-components, Emotion) — Tailwind only.
+- **Component libraries that ship their own visual design** (MUI, Ant Design, Chakra) —
+  they fight the design system. Headless primitives (Radix, React Aria) are acceptable for
+  accessible behaviour where hand-rolling is risky: dialogs, dropdowns, accordions.
+- **Firebase Authentication** — deferred. The JWT scheme in section 11 is the auth system.
+  Do not add a second one.
+
+---
+
+## 6. Commands
+
+```bash
+pnpm install                      # install all workspaces
+pnpm dev                          # run web + api together
+pnpm --filter web dev             # Next.js only
+pnpm --filter api dev             # Express only
+pnpm build                        # build all
+pnpm lint                         # ESLint across workspaces
+pnpm typecheck                    # tsc --noEmit across workspaces
+pnpm test                         # test suites
+pnpm format                       # Prettier write
+```
+
+**Before considering any task complete, run `pnpm lint` and `pnpm typecheck`.** A change
+that does not typecheck is not finished.
+
+---
+
+## 7. Design tokens
+
+Authoritative. Full specification in the project's design-system document; this section is
+the build contract.
+
+### 7.1 Colour
+
+| Role | Light | Dark |
+|---|---|---|
+| Background | `#F8FAFC` | `#080D1A` |
+| Background alt | `#F1F5F9` | `#0D1424` |
+| Card surface | `#FFFFFF` | `#111A2E` |
+| Text primary | `#0F172A` | `#F8FAFC` |
+| Text secondary | `#475569` | `#A8B4C7` |
+| Border | `#DCE4EE` | `#26334A` |
+| Primary blue | `#1463FF` | `#4D8BFF` |
+| Cyan accent | `#08B7ED` | `#25C7F5` |
+| Violet accent | `#5530D9` | `#7957F2` |
+| Success | `#15803D` | `#4ADE80` |
+| Error | `#DC2626` | `#F87171` |
+| On primary (text/icons on primary blue) | `#FFFFFF` | `#080D1A` |
+
+Define these once as CSS custom properties with light/dark variants and expose them to
+Tailwind as semantic names (`bg-surface`, `text-secondary`, `border-default`). **Never
+write a raw hex value in a component.**
+
+**Contrast caution:** white on light `#1463FF` is 4.93:1 and passes AA for normal text.
+White on dark `#4D8BFF` is only 3.25:1 and fails, which is why the dark `On primary` value is
+the dark background `#080D1A` (5.96:1). Always pair `bg-primary-blue` with `text-on-primary`.
+Also note: `border-default` is 1.23:1 (light) and 1.53:1 (dark) against the backgrounds —
+below the 3:1 needed for form-field boundaries — and light cyan `#08B7ED` is 2.23:1 on the
+background, so it is decorative only, never text. Verify any new colour pairing.
+
+### 7.2 Brand gradient
+
+Cyan → Royal Blue → Violet.
+
+Permitted on: logo-related accents, hero artwork, primary highlights, selected headings,
+decorative lines, featured-project accents.
+
+**Forbidden on:** body text, every card, every button, large background areas.
+
+### 7.3 Typography
+
+- Primary: **Geist Sans** (fallback Inter, then Manrope)
+- Mono: **Geist Mono** — technical labels and code only, never body copy
+
+| Level | Desktop | Mobile |
+|---|---|---|
+| Hero heading | 56–72px | 38–48px |
+| Page heading | 44–56px | 36px |
+| Section heading | 32–44px | 28px |
+| Card heading | 20–24px | — |
+| Body | 16–18px | — |
+| Small label | 13–14px | — |
+
+Heading sizes are fluid (`clamp()`), scaling linearly from the mobile value at a 375px
+viewport to the desktop value at 1280px. Implemented as `text-hero` (40→64px), `text-page`
+(36→48px), `text-section` (28→40px) and `text-card` (20→22px).
+
+Body line height 1.6–1.75. Body line length 60–75 characters.
+
+### 7.4 Spacing and layout
+
+| Token | Value |
+|---|---|
+| Max content width | 1200–1280px |
+| Side padding — desktop | 32–48px |
+| Side padding — tablet | 24–32px |
+| Side padding — mobile | 16–20px |
+| Section spacing — desktop | 80–120px |
+| Section spacing — tablet | 56–80px |
+| Section spacing — mobile | 40–64px |
+
+12-column responsive grid on desktop.
+
+### 7.5 Radii, borders, shadows
+
+| Element | Radius |
+|---|---|
+| Card | 12–16px |
+| Button | 10–12px |
+| Large media | 16–20px |
+| Form field | 8–10px |
+
+Border width: **1px**. Shadows: soft, low-opacity, vertically restrained. In dark mode
+rely on borders rather than shadows.
+
+### 7.6 Motion
+
+Duration **150–300ms**. Permitted: button hover, small card elevation, link-arrow
+movement, accordion expansion, menu open/close, validation feedback, skeleton loading,
+subtle section fade-and-rise, project image zoom 2–3%.
+
+Every non-essential animation must be disabled under `prefers-reduced-motion: reduce`.
+Implement this once as a global rule, not per component.
+
+---
+
+## 8. Design rules that are easy to violate
+
+Read this list before writing any UI.
+
+**Glassmorphism is permitted in exactly four places:**
+
+1. A small hero statistic panel
+2. A floating technology summary
+3. Selected decorative elements
+4. Optional desktop navigation background
+
+Nowhere else. Never on cards holding important content. Never on form fields — it destroys
+legibility.
+
+**Cards** use Flat Design 2.0: solid surface, 1px border, subtle shadow, consistent radius,
+slight elevation on hover. Not glass, not neumorphic, not heavily shadowed.
+
+**Bento layouts** are for selected technology and capability sections only — not the
+general page layout.
+
+**Buttons:** three variants only (primary solid blue, secondary bordered, text with arrow).
+Minimum height 44–48px. No fully-rounded pill shapes. No glow. Clear focus ring always.
+
+**Forms:** solid neutral surfaces, labels above fields, 1px borders, blue focus rings.
+Never translucent, never neumorphic.
+
+**Light theme:** do not use pure white for every surface — sections lose separation. Use
+the background/background-alt pair.
+
+**Dark theme:** dim navy, never pure black. Reduced gradient brightness. Minimal glow. The
+reversed logo variant is used automatically.
+
+**Never build:** moving backgrounds, parallax, cursor-following effects, glitch effects,
+kinetic typography, video backgrounds, large 3D or WebGL scenes, animation on every
+element.
+
+**Imagery:** genuine project screenshots, browser/device mockups, clean geometric
+illustrations, subtle grid or node patterns. Never generic stock photos of people at
+computers, cartoon characters, or cyberpunk visuals.
+
+---
+
+## 9. Component conventions
+
+### 9.1 Server and Client Components
+
+**Server Components are the default.** Add `'use client'` only when the component needs
+state, effects, event handlers, or browser APIs — and push it as far down the tree as
+possible. A page should not be a Client Component because one button inside it is
+interactive.
+
+### 9.2 Structure
+
+- Primitives in `components/ui/` — no business logic, no data fetching
+- Page sections in `components/sections/` — compose primitives, receive data as props
+- One component per file, named export, PascalCase filename matching the component
+- Props interfaces named `<Component>Props`, defined in the same file
+- Use `cn()` (clsx + tailwind-merge) for conditional classes
+
+### 9.3 Every interactive component must have
+
+- A visible focus state using the token focus ring
+- Correct light and dark rendering
+- Keyboard operability
+- Reduced-motion handling if it animates
+- A touch target of at least 44px on mobile
+
+---
+
+## 10. Forms and validation
+
+**The pattern, without exception:**
+
+1. Zod schema defined in `packages/shared/schemas/`
+2. `apps/web` imports it for React Hook Form via `@hookform/resolvers/zod`
+3. `apps/api` imports the **same** schema to validate the request body
+
+Client validation is convenience. Server validation is the security boundary. **Never trust
+client-validated data.**
+
+Forms use: labels above fields, explicit required indicators, inline validation, helpful
+error messages (say what to do, not just what is wrong), visible success confirmation, and
+logical field grouping.
+
+The quotation form is multi-step. Keep step state local; persist to the server only on
+final submit.
+
+---
+
+## 11. API conventions
+
+### 11.1 Layering
+
+`routes/` define paths and attach middleware → `controllers/` parse requests and shape
+responses → `services/` hold business logic → `models/` hold Mongoose schemas.
+
+**Controllers must not contain business logic. Services must not touch `req` or `res`.**
+
+### 11.2 Response envelope
+
+Consistent across every endpoint:
+
+```
+Success:  { "success": true,  "data": <payload> }
+Error:    { "success": false, "error": { "code": "...", "message": "...", "details"?: ... } }
+```
+
+Status codes: `200` ok, `201` created, `400` validation, `401` unauthenticated,
+`403` unauthorised, `404` not found, `409` conflict, `429` rate-limited, `500` server.
+
+**Never leak internal error messages, stack traces or Mongo errors to the client.** Log
+the detail with Pino; return a safe message.
+
+### 11.3 Auth and RBAC
+
+- Email/password, bcrypt-hashed (cost factor 12 or above)
+- JWT stored in an HTTP-only, `Secure`, `SameSite` cookie — **never in `localStorage`**
+- Roles: `super_admin`, `admin`, `content_editor`
+- Role checks enforced by middleware on the route, **never in the UI alone**. Hiding a
+  button is not authorisation.
+- Sessions expire; logout invalidates
+- Significant admin actions written to an audit log
+
+**Cookie/domain note:** the web app and API must share a registrable domain
+(`nexastack.example` and `api.nexastack.example`) so the session cookie can use
+`SameSite=Lax`. If they end up on different sites, the cookie requires
+`SameSite=None; Secure` with CORS `credentials: true` and an explicit origin allowlist —
+and Safari's tracking prevention will still cause problems. Raise this rather than working
+around it.
+
+### 11.4 Mandatory on every endpoint
+
+- Server-side Zod validation of body, params and query
+- Helmet security headers
+- CORS restricted to an explicit origin allowlist — never `*` with credentials
+- `express-rate-limit` on auth, contact and quotation routes
+- Sanitised input, guarding against NoSQL injection (never pass raw user objects into a
+  query)
+- A defined CSRF strategy for cookie-authenticated mutations
+- Structured Pino logging with a request id
+- An OpenAPI annotation
+
+### 11.5 Database
+
+- Indexes on slugs, search fields, content status, and submission timestamps
+- Mongoose schema-level validation in addition to Zod
+- `lean()` for read-only queries
+- Never return password hashes or tokens from a query — use `select: false`
+
+---
+
+## 12. Data fetching
+
+| Context | Approach |
+|---|---|
+| Public pages | Server Components with native `fetch`, appropriate caching |
+| Admin interface | TanStack Query for caching, mutations, optimistic updates |
+| Filters, pagination, search | **URL search params** — shareable, bookmarkable, back-button correct |
+
+Do not lift filter state into React state when the URL can hold it.
+
+---
+
+## 13. SEO
+
+Every public page requires:
+
+- `metadata` export (Next.js Metadata API) — title, description, canonical
+- Dynamic metadata for services, projects and blog posts
+- Open Graph and Twitter card metadata with a generated share image
+- JSON-LD structured data using the appropriate type: `Organization` (site-wide),
+  `Service`, `Article`, `BreadcrumbList`
+- Semantic heading order — exactly one `<h1>` per page, no level skipping
+
+`sitemap.ts` and `robots.ts` live at the `app/` root and are generated, not hand-written.
+
+---
+
+## 14. Accessibility — non-negotiable
+
+Target: **WCAG 2.1 AA**.
+
+- Semantic HTML first. ARIA only where semantics are insufficient.
+- Contrast ≥4.5:1 normal text, ≥3:1 large text and UI boundaries
+- Every interactive element reachable and operable by keyboard, in logical order
+- Visible focus indicators — never `outline: none` without a replacement
+- Every form control has an associated label; errors linked via `aria-describedby`
+- Never convey meaning by colour alone — pair with text or an icon
+- All images have meaningful `alt`; decorative images use `alt=""`
+- Accordions, dropdowns and dialogs follow the WAI-ARIA authoring patterns
+- `prefers-reduced-motion` respected
+- No horizontal scrolling at any breakpoint
+- Touch targets ≥44px
+
+Run axe-core checks on new pages before considering them done.
+
+---
+
+## 15. Media
+
+- `next/image` for all images, with explicit `width`/`height` or `fill` plus `sizes`
+- Uploads go to Cloudinary; metadata and alt text stored in MongoDB
+- File type and size validated **server-side** — never trust the client
+- Generate responsive variants and social-sharing images
+- Alt text is a required field on upload, not optional
+
+---
+
+## 16. Responsive behaviour
+
+Mobile-first. Three tiers:
+
+**Desktop** — multi-column, full navigation, large hero type, split featured-project
+layout, controlled bento sections.
+
+**Tablet** — two-column cards, reduced type scale, simplified spacing.
+
+**Mobile** — single column, compact header, full-height menu drawer, full-width primary
+CTAs, stacked project details, simplified decorative elements, no horizontal scroll.
+
+Test every new section at 375px, 768px, 1280px and 1920px.
+
+---
+
+## 17. Security checklist
+
+- Secrets in environment variables only. **Never commit `.env*`. Never print a secret.**
+- Validate every input server-side
+- Escape and sanitise any user-generated content before rendering
+- Rate-limit auth and public form endpoints
+- Role middleware on every protected route
+- Audit-log significant admin actions
+- Database and media backups configured
+- Dependencies kept current; no unmaintained packages
+
+---
+
+## 18. Environment variables
+
+Every variable must appear in `.env.example` with a description and a dummy value.
+`.env.example` is committed; `.env*` is not.
+
+Expected set: MongoDB URI, JWT secret, cookie domain, Cloudinary credentials, email
+provider API key, Turnstile keys, Sentry DSN, public site URL, public API URL.
+
+`NEXT_PUBLIC_*` variables are visible in the browser. Never prefix a secret.
+
+---
+
+## 19. Git and workflow
+
+- `main` is deployable at all times
+- Branches: `feat/`, `fix/`, `chore/`, `docs/`, `refactor/`
+- Conventional commit subjects: `feat(web): add services grid section`
+- Small, focused PRs with a description of what changed and why
+- `pnpm lint` and `pnpm typecheck` must pass before commit
+- **Do not commit or push unless asked.**
+
+---
+
+## 20. Testing
+
+Minimum coverage expected:
+
+- Unit tests for Zod schemas and service-layer logic
+- Integration tests for auth, contact and quotation endpoints
+- An E2E smoke test of the contact and quotation flows — these are the paths where a
+  silent failure costs a real client
+- axe-core accessibility assertions on key pages
+
+---
+
+## 21. Do not
+
+- Add dependencies without asking
+- Introduce a global state library
+- Use `localStorage` for auth tokens
+- Write raw hex colours or arbitrary spacing values in components
+- Apply glassmorphism outside the four permitted uses
+- Use gradients on body text, every card, or every button
+- Skip server-side validation because the client validates
+- Return internal errors to the client
+- Redesign UI you were not asked to touch
+- Delete or rewrite existing working code as a side effect of another task
+- Commit `.env` files or print secrets
+- Mark work complete without running lint and typecheck
+
+---
+
+## 22. Open decisions
+
+Do not silently resolve these. Ask.
+
+1. **Domain name** — not registered. Affects cookie strategy (section 11.3), email
+   addresses, canonical URLs, and Open Graph URLs.
+2. **Build phasing** — recommended: phase 1 marketing site with a working contact form;
+   phase 2 admin dashboard and blog; phase 3 quotation system. Confirm before scaffolding
+   the admin area.
+3. **Blog content source** — MDX files, a headless CMS, or admin dashboard with a rich-text
+   editor. Unresolved and non-trivial.
+4. **Transactional email provider** — Resend, Postmark or Brevo.
+5. **Render hosting tier** — the free tier sleeps and adds ~30s to the first request.
+   Unacceptable for a contact form. Either pay, or serve contact/quotation from Next.js
+   Route Handlers and reserve Express for the admin API.
+6. **General email address** — `nexastack@mail.com` is a free generic mailbox and weakens
+   credibility. Move to `hello@<domain>` once registered. Do not publish an unmonitored
+   address.
+7. **Business type** — not specified. Needed for legal pages and `Organization` JSON-LD.
+8. **Address publication** — the supplied address is residential in format. Decide whether
+   to publish it fully or show only "Uttara, Dhaka, Bangladesh".
+9. **Target market** — local, international, or both. Affects copy, currency, time-zone
+   handling and stated response times.
+10. **Service list** — not yet defined. Required before the Services and Solutions pages.
+11. **Logo variants** — only a square raster PNG with a white background exists. A
+    horizontal lockup, a mark-only version, a reversed dark-mode version and an SVG are all
+    needed.

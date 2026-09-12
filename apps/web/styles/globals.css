@@ -1,0 +1,146 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+/* Class-based dark mode: the pre-paint theme script toggles `.dark` on <html>. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Semantic token → Tailwind mapping. `inline` makes each utility reference the raw variable
+ * directly, so it resolves on the element using it (required for the .light/.dark scopes).
+ */
+@theme inline {
+  /* Remove Tailwind's default palette and radius scale: tokens only. */
+  --color-*: initial;
+  --radius-*: initial;
+
+  /*
+   * Neutral roles use per-utility namespaces so each class exists only where it makes sense:
+   * `text-primary` exists, `bg-primary` does not (it would be near-black and easily confused
+   * with brand blue).
+   */
+  --background-color-background: var(--nx-background);
+  --background-color-background-alt: var(--nx-background-alt);
+  --background-color-surface: var(--nx-surface);
+  --text-color-primary: var(--nx-text-primary);
+  --text-color-secondary: var(--nx-text-secondary);
+  --border-color-default: var(--nx-border);
+
+  /* Brand and status colours work with every colour utility (bg, text, border, ring, fill…). */
+  --color-primary-blue: var(--nx-primary-blue);
+  --color-cyan: var(--nx-cyan);
+  --color-violet: var(--nx-violet);
+  --color-success: var(--nx-success);
+  --color-error: var(--nx-error);
+  --color-on-primary: var(--nx-on-primary);
+
+  /* Typography — CLAUDE.md 7.3. Fluid sizes scale linearly between 375px and 1280px viewports. */
+  --font-sans: var(--font-geist-sans), Inter, Manrope, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --text-hero: clamp(2.5rem, 1.878rem + 2.652vw, 4rem); /* 40 → 64px */
+  --text-hero--line-height: 1.1;
+  --text-page: clamp(2.25rem, 1.939rem + 1.326vw, 3rem); /* 36 → 48px */
+  --text-page--line-height: 1.15;
+  --text-section: clamp(1.75rem, 1.439rem + 1.326vw, 2.5rem); /* 28 → 40px */
+  --text-section--line-height: 1.2;
+  --text-card: clamp(1.25rem, 1.198rem + 0.221vw, 1.375rem); /* 20 → 22px */
+  --text-card--line-height: 1.35;
+  --text-body: 1rem; /* 16px */
+  --text-body--line-height: 1.7;
+  --text-body-lg: 1.125rem; /* 18px */
+  --text-body-lg--line-height: 1.7;
+  --text-label: 0.875rem; /* 14px */
+  --text-label--line-height: 1.5;
+
+  /* Radii — CLAUDE.md 7.5 */
+  --radius-field: 0.5rem; /* 8px */
+  --radius-btn: 0.625rem; /* 10px */
+  --radius-card: 0.875rem; /* 14px */
+  --radius-media: 1.125rem; /* 18px */
+
+  /* Layout — CLAUDE.md 7.4 */
+  --container-content: 80rem; /* 1280px → max-w-content */
+
+  --spacing-section-sm: 3rem; /* 48px mobile */
+  --spacing-section-md: 4.5rem; /* 72px tablet */
+  --spacing-section-lg: 6rem; /* 96px desktop */
+  --spacing-gutter-sm: 1.25rem; /* 20px mobile */
+  --spacing-gutter-md: 2rem; /* 32px tablet */
+  --spacing-gutter-lg: 2.5rem; /* 40px desktop */
+}
+
+/* Vertical rhythm for a page section: mobile → tablet (md) → desktop (lg). */
+@utility section-y {
+  padding-block: var(--spacing-section-sm);
+  @variant md {
+    padding-block: var(--spacing-section-md);
+  }
+  @variant lg {
+    padding-block: var(--spacing-section-lg);
+  }
+}
+
+/* Centred content column with responsive side padding. */
+@utility page-container {
+  margin-inline: auto;
+  width: 100%;
+  max-width: var(--container-content);
+  padding-inline: var(--spacing-gutter-sm);
+  @variant md {
+    padding-inline: var(--spacing-gutter-md);
+  }
+  @variant lg {
+    padding-inline: var(--spacing-gutter-lg);
+  }
+}
+
+/* The token focus ring. Also applied globally to :focus-visible in the base layer. */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--nx-primary-blue);
+    outline-offset: 2px;
+  }
+}
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--nx-border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--nx-background);
+    color: var(--nx-text-primary);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--nx-primary-blue);
+    outline-offset: 2px;
+  }
+}
+
+/*
+ * Reduced motion — CLAUDE.md 7.6. Implemented once, globally. Durations are near-zero rather
+ * than `none` so transitionend/animationend events still fire for any code that awaits them.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
