@@ -168,6 +168,7 @@ All versions are exact pins. `zod`, `typescript` and `@types/node` are pinned on
 | web | tailwindcss / @tailwindcss/postcss | 4.3.3 |
 | web | clsx | 2.1.1 |
 | web | tailwind-merge | 3.7.0 |
+| web | @radix-ui/react-dialog | 1.1.23 |
 | web (dev) | @types/react / @types/react-dom | 19.3.0 |
 | api | express | 5.2.1 |
 | api | mongoose | 9.10.0 |

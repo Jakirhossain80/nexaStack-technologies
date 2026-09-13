@@ -1,10 +1,17 @@
 import type { ReactNode } from 'react';
 
+import { Navbar } from '@/components/layout/Navbar';
+
 export interface MarketingLayoutProps {
   children: ReactNode;
 }
 
-/** Public site shell. Navbar and Footer are added here when they are built. */
+/** Public site shell. The Footer is added here when it is built. */
 export default function MarketingLayout({ children }: Readonly<MarketingLayoutProps>) {
-  return <main id="main-content">{children}</main>;
+  return (
+    <>
+      <Navbar />
+      <main id="main-content">{children}</main>
+    </>
+  );
 }
