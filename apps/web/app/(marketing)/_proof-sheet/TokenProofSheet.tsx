@@ -15,7 +15,7 @@ import { cn } from '@/lib/cn';
 
 import { ResolvedValue } from './ResolvedValue';
 
-type SwatchKind = 'fill' | 'text' | 'border' | 'on-primary';
+type SwatchKind = 'fill' | 'text' | 'border' | 'on-fill';
 
 interface Swatch {
   role: string;
@@ -50,6 +50,13 @@ const SWATCHES: readonly Swatch[] = [
     variable: '--nx-surface',
   },
   {
+    role: 'Card surface hover',
+    classes: 'bg-surface-hover',
+    previewClass: 'bg-surface-hover',
+    kind: 'fill',
+    variable: '--nx-surface-hover',
+  },
+  {
     role: 'Text primary',
     classes: 'text-primary',
     previewClass: 'text-primary',
@@ -69,7 +76,22 @@ const SWATCHES: readonly Swatch[] = [
     previewClass: 'border-default',
     kind: 'border',
     variable: '--nx-border',
-    note: 'Below 3:1 against backgrounds: do not rely on it alone for form-field boundaries.',
+    note: 'Cards and dividers. Below 3:1: never the only boundary of a form field.',
+  },
+  {
+    role: 'Border hover',
+    classes: 'border-default-hover',
+    previewClass: 'border-default-hover',
+    kind: 'border',
+    variable: '--nx-border-hover',
+  },
+  {
+    role: 'Border strong',
+    classes: 'border-strong',
+    previewClass: 'border-strong',
+    kind: 'border',
+    variable: '--nx-border-strong',
+    note: 'Form fields. ≥3:1 against every surface in both themes.',
   },
   {
     role: 'Primary blue',
@@ -77,6 +99,13 @@ const SWATCHES: readonly Swatch[] = [
     previewClass: 'bg-primary-blue',
     kind: 'fill',
     variable: '--nx-primary-blue',
+  },
+  {
+    role: 'Primary blue hover',
+    classes: 'bg-primary-blue-hover · text-primary-blue-hover',
+    previewClass: 'bg-primary-blue-hover',
+    kind: 'fill',
+    variable: '--nx-primary-blue-hover',
   },
   {
     role: 'Cyan accent',
@@ -111,10 +140,29 @@ const SWATCHES: readonly Swatch[] = [
     role: 'On primary',
     classes: 'text-on-primary',
     previewClass: 'bg-primary-blue text-on-primary',
-    kind: 'on-primary',
+    kind: 'on-fill',
     variable: '--nx-on-primary',
   },
+  {
+    role: 'On success',
+    classes: 'text-on-success',
+    previewClass: 'bg-success text-on-success',
+    kind: 'on-fill',
+    variable: '--nx-on-success',
+  },
+  {
+    role: 'On error',
+    classes: 'text-on-error',
+    previewClass: 'bg-error text-on-error',
+    kind: 'on-fill',
+    variable: '--nx-on-error',
+  },
 ];
+
+const SHADOWS = [
+  { classes: 'shadow-card', spec: 'Resting card', sampleClass: 'shadow-card' },
+  { classes: 'shadow-card-hover', spec: 'Hovered card', sampleClass: 'shadow-card-hover' },
+] as const;
 
 const TYPE_SCALE = [
   { classes: 'text-hero', spec: '40 → 64px fluid', sampleClass: 'text-hero font-semibold' },
@@ -204,11 +252,16 @@ function SwatchPreview({ swatch }: { swatch: Swatch }) {
         </div>
       );
     case 'border':
-      return <div className={cn(base, 'border-4 bg-surface', swatch.previewClass)} />;
-    case 'on-primary':
+      // 1px, as used in the UI, so the boundary contrast is judged at real weight.
+      return (
+        <div className={cn(base, 'border bg-surface', swatch.previewClass)}>
+          <span className="text-body text-secondary">1px border</span>
+        </div>
+      );
+    case 'on-fill':
       return (
         <div className={cn(base, swatch.previewClass)}>
-          <span className="text-body font-semibold">Button label</span>
+          <span className="text-body font-semibold">Label on fill</span>
         </div>
       );
     case 'fill':
@@ -260,6 +313,22 @@ function RadiusScale() {
           />
           <code className="mt-2 block font-mono text-label">{radius.classes}</code>
           <span className="text-label text-secondary">{radius.spec}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function ShadowScale() {
+  return (
+    <ul className="grid gap-6 sm:grid-cols-2">
+      {SHADOWS.map((shadow) => (
+        <li
+          key={shadow.classes}
+          className={cn('rounded-card border border-default bg-surface p-5', shadow.sampleClass)}
+        >
+          <code className="block font-mono text-label">{shadow.classes}</code>
+          <span className="text-label text-secondary">{shadow.spec}</span>
         </li>
       ))}
     </ul>
@@ -362,6 +431,16 @@ export function TokenProofSheet() {
             ))}
           </ul>
         </div>
+      </ProofSection>
+
+      <ProofSection
+        id="proof-shadow"
+        title="Shadows"
+        description="Card shadows from CLAUDE.md 7.5: soft and low-opacity in light mode, near-invisible in dark mode, which relies on borders."
+      >
+        <BothThemes>
+          <ShadowScale />
+        </BothThemes>
       </ProofSection>
 
       <ProofSection

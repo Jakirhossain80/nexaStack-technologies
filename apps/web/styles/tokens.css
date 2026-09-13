@@ -26,6 +26,20 @@
   --nx-error: #dc2626;
   /* Text/icons on a primary-blue fill: 4.93:1 */
   --nx-on-primary: #ffffff;
+
+  /* Form-field borders. ≥3:1 on every surface: bg 3.35, bg-alt 3.20, surface 3.51 */
+  --nx-border-strong: #7e8a9a;
+  /* Hover states. primary-blue-hover with white text: 5.80:1 */
+  --nx-primary-blue-hover: #135ae5;
+  --nx-surface-hover: #f4f7fa;
+  --nx-border-hover: #bec7d3;
+  /* Text/icons on success and error fills: 5.02:1 and 4.83:1 */
+  --nx-on-success: #ffffff;
+  --nx-on-error: #ffffff;
+
+  /* Soft, low-opacity, vertically restrained. Tinted with text-primary. */
+  --nx-shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.06);
+  --nx-shadow-card-hover: 0 2px 4px rgb(15 23 42 / 0.05), 0 4px 12px rgb(15 23 42 / 0.08);
 }
 
 .dark {
@@ -44,4 +58,18 @@
   --nx-error: #f87171;
   /* White on #4D8BFF is only 3.25:1, so dark mode uses the dark background: 5.96:1 */
   --nx-on-primary: #080d1a;
+
+  /* Form-field borders. ≥3:1 on every surface: bg 3.60, bg-alt 3.41, surface 3.22 */
+  --nx-border-strong: #5f6b80;
+  /* Hover states. Lighter in dark mode; on-primary (navy) on primary-blue-hover: 7.19:1 */
+  --nx-primary-blue-hover: #689cff;
+  --nx-surface-hover: #1a2336;
+  --nx-border-hover: #404d63;
+  /* Text/icons on success and error fills: 11.13:1 and 7.01:1 */
+  --nx-on-success: #080d1a;
+  --nx-on-error: #080d1a;
+
+  /* Minimal: dark mode relies on borders, not shadows. */
+  --nx-shadow-card: 0 1px 2px rgb(0 0 0 / 0.2);
+  --nx-shadow-card-hover: 0 2px 4px rgb(0 0 0 / 0.24);
 }

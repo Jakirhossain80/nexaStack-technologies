@@ -183,7 +183,8 @@ Before a component is done:
 - Labelled if it is a form control
 - Animations disabled under `prefers-reduced-motion`
 - Touch target ≥44px on mobile
-- Contrast verified — note white on `#1463FF` is ≈4.3:1 and only passes for large text
+- Contrast verified — note white on `#1463FF` is 4.93:1 (passes AA for normal text); verify
+  this pairing wherever it is used
 
 Use Radix or React Aria for dialogs, dropdowns, accordions and tabs rather than hand-
 rolling focus traps and ARIA wiring.

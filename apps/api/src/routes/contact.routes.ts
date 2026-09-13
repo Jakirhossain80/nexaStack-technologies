@@ -13,7 +13,7 @@ export const contactRouter = Router();
  *   post:
  *     summary: Submit a contact enquiry
  *     description: >
- *       Public. Rate limited to 5 requests per IP per 15 minutes. The body is validated with
+ *       Public. Rate limited to 10 requests per IP per 15 minutes. The body is validated with
  *       contactSchema from @nexastack/shared. Not yet persisted or emailed.
  *     tags: [Contact]
  *     security: []

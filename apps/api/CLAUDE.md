@@ -9,7 +9,8 @@ Root `CLAUDE.md` applies first. This file adds API-specific rules.
 
 ```
 src/
-├── index.ts              # app bootstrap, middleware order, graceful shutdown
+├── app.ts                # createApp(): builds and exports the app, middleware order
+├── index.ts              # starts the server: env check, listen, DB connect, graceful shutdown
 ├── config/               # env parsing (validated with Zod at startup)
 ├── routes/               # path definitions + middleware attachment ONLY
 ├── controllers/          # parse request, call service, shape response
@@ -25,21 +26,33 @@ touch `req`, `res` or `next`. A route file that contains logic is wrong.
 
 ---
 
-## 2. Middleware order in `index.ts`
+## 2. Middleware order in `app.ts`
+
+The app is split across two files:
+
+- **`app.ts`** builds and exports the app (`createApp()`), and owns the middleware order
+  below. It does not listen on a port.
+- **`index.ts`** starts the server: validates the environment, calls `createApp()`, listens,
+  connects to MongoDB and handles graceful shutdown.
+
+This split lets tests import `createApp()` without binding a port. Never call `listen` in
+`app.ts`, and never register middleware in `index.ts`.
 
 ```
 helmet
 cors (explicit origin allowlist, credentials: true)
 cookie-parser
-express.json (with size limit)
 pino-http (request id)
+express.json (with size limit)
 rate limiters (per-route)
 routes
 404 handler
 error handler (last, 4-arg signature)
 ```
 
-Order matters. The error handler is always last.
+Order matters. The error handler is always last. `pino-http` runs before `express.json` so
+that a request rejected by the body parser (malformed JSON, body too large) still carries a
+request id in its log line and `X-Request-Id` response header.
 
 ---
 
@@ -146,6 +159,19 @@ These are public and therefore the most exposed surface:
 - Attachments: validate MIME type and size server-side, store in Cloudinary, never trust
   the client-reported type
 - Log every submission with a request id
+
+### Rate limiting
+
+- Contact: **10 requests per IP per 15 minutes** (`middleware/rateLimit.ts`). Do not lower it
+  without evidence: carrier-grade NAT is common in Bangladesh, so an office or a mobile network
+  can put many genuine users behind one IP address.
+- Every rejection is logged at `warn` with the client IP and the endpoint, so we can see
+  whether the limit is ever actually reached.
+- **The store is in-memory: per-process, and reset on every restart.** That is acceptable for
+  a single Render instance only. It must be moved to a shared store (e.g. Redis) before the
+  API runs on more than one instance, or each instance enforces its own separate limit.
+- `TRUST_PROXY` must match the number of proxy hops in production, or every request appears
+  to come from the proxy's IP and all clients share one limit.
 
 ---
 

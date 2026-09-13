@@ -8,11 +8,15 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
 }
 
+// Hover is an explicit colour change to a *-hover token (CLAUDE.md 7.1), never a filter, so
+// the label keeps its verified contrast. `enabled:` keeps disabled buttons static.
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
-  // on-primary is white in light mode (4.93:1) and dark navy in dark mode (5.96:1).
-  primary: 'bg-primary-blue text-on-primary px-6 hover:brightness-95',
-  secondary: 'border-default bg-surface text-primary hover:bg-background-alt border px-6',
-  text: 'text-primary-blue px-2 underline-offset-4 hover:underline',
+  // on-primary on primary-blue: 4.93:1 light, 5.96:1 dark. On primary-blue-hover: 5.80 / 7.19.
+  primary: 'bg-primary-blue px-6 text-on-primary enabled:hover:bg-primary-blue-hover',
+  secondary:
+    'border border-default bg-surface px-6 text-primary enabled:hover:border-default-hover enabled:hover:bg-surface-hover',
+  // primary-blue-hover as text: ≥5.54:1 on background and surface in both themes.
+  text: 'px-2 text-primary-blue underline-offset-4 enabled:hover:text-primary-blue-hover enabled:hover:underline',
 };
 
 /**

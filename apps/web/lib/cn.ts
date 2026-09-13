@@ -11,6 +11,7 @@ const twMerge = extendTailwindMerge({
     theme: {
       text: ['hero', 'page', 'section', 'card', 'body', 'body-lg', 'label'],
       radius: ['field', 'btn', 'card', 'media'],
+      shadow: ['card', 'card-hover'],
       container: ['content'],
       spacing: ['section-sm', 'section-md', 'section-lg', 'gutter-sm', 'gutter-md', 'gutter-lg'],
     },

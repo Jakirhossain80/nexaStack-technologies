@@ -82,6 +82,11 @@ nexastack/
 │           └── index.ts
 └── packages/
     └── shared/                  # Zod schemas + TypeScript types used by BOTH apps
+        └── src/
+            ├── schemas/         # one Zod schema file per domain
+            ├── types/           # types inferred from schemas
+            ├── constants/       # roles, content statuses, error codes
+            └── index.ts         # explicit public exports
 ```
 
 Each app has its own `CLAUDE.md` with app-specific conventions. Read the nearest one.
@@ -236,17 +241,53 @@ the build contract.
 | Success | `#15803D` | `#4ADE80` |
 | Error | `#DC2626` | `#F87171` |
 | On primary (text/icons on primary blue) | `#FFFFFF` | `#080D1A` |
+| Border strong (form-field borders) | `#7E8A9A` | `#5F6B80` |
+| Primary blue hover | `#135AE5` | `#689CFF` |
+| Card surface hover | `#F4F7FA` | `#1A2336` |
+| Border hover | `#BEC7D3` | `#404D63` |
+| On success (text/icons on success) | `#FFFFFF` | `#080D1A` |
+| On error (text/icons on error) | `#FFFFFF` | `#080D1A` |
 
 Define these once as CSS custom properties with light/dark variants and expose them to
 Tailwind as semantic names (`bg-surface`, `text-secondary`, `border-default`). **Never
 write a raw hex value in a component.**
 
+Tailwind classes, as implemented in `apps/web/styles/globals.css`:
+
+| Token | Classes |
+|---|---|
+| Background / Background alt / Card surface | `bg-background`, `bg-background-alt`, `bg-surface` |
+| Card surface hover | `bg-surface-hover` |
+| Text primary / secondary | `text-primary`, `text-secondary` |
+| Border / Border hover / Border strong | `border-default`, `border-default-hover`, `border-strong` |
+| Primary blue / hover | `*-primary-blue`, `*-primary-blue-hover` (bg, text, border, ring, outline…) |
+| Cyan / Violet / Success / Error | `*-cyan`, `*-violet`, `*-success`, `*-error` |
+| On primary / success / error | `text-on-primary`, `text-on-success`, `text-on-error` |
+
+Pairing rules and verified contrast ratios for the added tokens:
+
+| Pairing | Light | Dark | Required |
+|---|---|---|---|
+| `border-strong` on background / background alt / surface | 3.35 / 3.20 / 3.51 | 3.60 / 3.41 / 3.22 | ≥3:1 |
+| `text-on-primary` on `primary-blue-hover` | 5.80 | 7.19 | ≥4.5:1 |
+| `text-primary-blue-hover` on background / surface | 5.54 / 5.80 | 7.19 / 6.43 | ≥4.5:1 |
+| `text-on-success` on `success` | 5.02 | 11.13 | ≥4.5:1 |
+| `text-on-error` on `error` | 4.83 | 7.01 | ≥4.5:1 |
+| `text-primary` / `text-secondary` on `surface-hover` | 16.60 / 7.05 | 15.01 / 7.49 | ≥4.5:1 |
+
+- Use `border-strong` for form fields and any border that is the only thing identifying a
+  control. `border-default` and `border-default-hover` are for cards and dividers.
+- Primary blue hover is darker in light mode and lighter in dark mode, so it keeps contrast
+  with `text-on-primary` in both. White text on the dark hover value is 2.70:1 — never put
+  white on primary blue in dark mode.
+
 **Contrast caution:** white on light `#1463FF` is 4.93:1 and passes AA for normal text.
 White on dark `#4D8BFF` is only 3.25:1 and fails, which is why the dark `On primary` value is
 the dark background `#080D1A` (5.96:1). Always pair `bg-primary-blue` with `text-on-primary`.
 Also note: `border-default` is 1.23:1 (light) and 1.53:1 (dark) against the backgrounds —
-below the 3:1 needed for form-field boundaries — and light cyan `#08B7ED` is 2.23:1 on the
-background, so it is decorative only, never text. Verify any new colour pairing.
+below the 3:1 needed for form-field boundaries, so form fields use `border-strong` — and light
+cyan `#08B7ED` is 2.23:1 on the background, so it is decorative only, never text. Verify any
+new colour pairing.
 
 ### 7.2 Brand gradient
 
@@ -302,6 +343,13 @@ Body line height 1.6–1.75. Body line length 60–75 characters.
 
 Border width: **1px**. Shadows: soft, low-opacity, vertically restrained. In dark mode
 rely on borders rather than shadows.
+
+| Shadow | Class | Light | Dark |
+|---|---|---|---|
+| Card | `shadow-card` | `0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.06)` | `0 1px 2px rgb(0 0 0 / 0.2)` |
+| Card hover | `shadow-card-hover` | `0 2px 4px rgb(15 23 42 / 0.05), 0 4px 12px rgb(15 23 42 / 0.08)` | `0 2px 4px rgb(0 0 0 / 0.24)` |
+
+Light shadows are tinted with Text primary. Dark shadows are near-invisible on navy by design.
 
 ### 7.6 Motion
 
@@ -387,7 +435,7 @@ interactive.
 
 **The pattern, without exception:**
 
-1. Zod schema defined in `packages/shared/schemas/`
+1. Zod schema defined in `packages/shared/src/schemas/`
 2. `apps/web` imports it for React Hook Form via `@hookform/resolvers/zod`
 3. `apps/api` imports the **same** schema to validate the request body
 

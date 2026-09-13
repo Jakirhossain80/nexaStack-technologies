@@ -84,7 +84,7 @@ function toErrorResponse(err: unknown): ErrorResponse {
  * safe envelope to the client.
  */
 export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
-  // pino-http runs after express.json, so body-parser errors arrive before req.log exists.
+  // req.log is missing only if helmet, cors or cookie-parser (which run before pino-http) throw.
   const log = req.log ?? logger;
 
   if (res.headersSent) {

@@ -16,6 +16,7 @@ export type {
 // Constants
 export { ROLES, roleSchema, type Role } from './constants/roles.js';
 export {
+  CONTENT_STATUS,
   CONTENT_STATUSES,
   contentStatusSchema,
   type ContentStatus,

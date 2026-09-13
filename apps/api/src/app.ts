@@ -36,8 +36,9 @@ export function createApp(): Express {
   app.use(helmet());
   app.use(cors(corsOptions));
   app.use(cookieParser());
-  app.use(express.json({ limit: JSON_BODY_LIMIT }));
+  // Before express.json, so body-parser rejections (malformed JSON, too large) have a request id.
   app.use(httpLogger);
+  app.use(express.json({ limit: JSON_BODY_LIMIT }));
   // Rate limiters are attached per route inside the routers.
   app.use(router);
   app.use(notFound);

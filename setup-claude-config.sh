@@ -209,10 +209,8 @@ Define these once as CSS custom properties with light/dark variants and expose t
 Tailwind as semantic names (`bg-surface`, `text-secondary`, `border-default`). **Never
 write a raw hex value in a component.**
 
-**Contrast caution:** white on `#1463FF` is ≈4.3:1 — below the 4.5:1 AA threshold for
-normal text. It passes for large text (≥18.66px bold or ≥24px). Primary buttons must
-therefore use ≥16px semibold at the stated 44–48px height, or a darkened blue. Verify any
-new use of white-on-primary.
+**Contrast caution:** white on `#1463FF` is 4.93:1, which passes the 4.5:1 AA threshold for
+normal text. Verify any new use of white-on-primary.
 
 ### 7.2 Brand gradient
 
@@ -781,7 +779,8 @@ Before a component is done:
 - Labelled if it is a form control
 - Animations disabled under `prefers-reduced-motion`
 - Touch target ≥44px on mobile
-- Contrast verified — note white on `#1463FF` is ≈4.3:1 and only passes for large text
+- Contrast verified — note white on `#1463FF` is 4.93:1 (passes AA for normal text); verify
+  this pairing wherever it is used
 
 Use Radix or React Aria for dialogs, dropdowns, accordions and tabs rather than hand-
 rolling focus traps and ARIA wiring.
@@ -1435,7 +1434,7 @@ Report findings first with file, line, the criterion breached, and the fix.
 - [ ] Large text (≥18.66px bold / ≥24px) ≥3:1
 - [ ] UI component boundaries and icons ≥3:1
 - [ ] Verified in **both** light and dark themes
-- [ ] Special attention to white on `#1463FF` (≈4.3:1 — large text only)
+- [ ] Special attention to white on `#1463FF` (4.93:1 — passes AA for normal text; verify every use)
 
 **Forms**
 - [ ] Every control has an associated `<label>`

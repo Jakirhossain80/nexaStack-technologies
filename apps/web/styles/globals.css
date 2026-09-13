@@ -21,17 +21,28 @@
   --background-color-background: var(--nx-background);
   --background-color-background-alt: var(--nx-background-alt);
   --background-color-surface: var(--nx-surface);
+  --background-color-surface-hover: var(--nx-surface-hover);
   --text-color-primary: var(--nx-text-primary);
   --text-color-secondary: var(--nx-text-secondary);
   --border-color-default: var(--nx-border);
+  --border-color-default-hover: var(--nx-border-hover);
+  /* Form-field borders: ≥3:1 against every surface in both themes. */
+  --border-color-strong: var(--nx-border-strong);
 
   /* Brand and status colours work with every colour utility (bg, text, border, ring, fill…). */
   --color-primary-blue: var(--nx-primary-blue);
+  --color-primary-blue-hover: var(--nx-primary-blue-hover);
   --color-cyan: var(--nx-cyan);
   --color-violet: var(--nx-violet);
   --color-success: var(--nx-success);
   --color-error: var(--nx-error);
   --color-on-primary: var(--nx-on-primary);
+  --color-on-success: var(--nx-on-success);
+  --color-on-error: var(--nx-on-error);
+
+  /* Shadows — CLAUDE.md 7.5. Soft in light mode, minimal in dark mode. */
+  --shadow-card: var(--nx-shadow-card);
+  --shadow-card-hover: var(--nx-shadow-card-hover);
 
   /* Typography — CLAUDE.md 7.3. Fluid sizes scale linearly between 375px and 1280px viewports. */
   --font-sans: var(--font-geist-sans), Inter, Manrope, ui-sans-serif, system-ui, sans-serif;

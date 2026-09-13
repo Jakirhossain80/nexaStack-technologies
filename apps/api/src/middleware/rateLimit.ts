@@ -6,18 +6,34 @@ import { sendError } from '../lib/respond.js';
 const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
 
 /**
- * Public contact form: 5 submissions per IP per 15 minutes.
+ * Public contact form: 10 submissions per IP per 15 minutes.
  *
- * Uses the default in-memory store, which is only correct while the API runs as a single
- * instance. Move to a shared store before scaling horizontally.
+ * Deliberately not lower: carrier-grade NAT is common in Bangladesh, so one office or mobile
+ * network can put many genuine users behind a single IP. Every rejection is logged at warn so
+ * we can see whether the limit is ever actually reached.
+ *
+ * Uses the default in-memory store: per-process and reset on restart. Acceptable for a single
+ * Render instance only — move to a shared store before running more than one.
  */
+export const CONTACT_RATE_LIMIT = 10;
+
 export const contactRateLimiter = rateLimit({
   windowMs: FIFTEEN_MINUTES_MS,
-  limit: 5,
+  limit: CONTACT_RATE_LIMIT,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   handler: (req, res, _next, options) => {
-    req.log.warn({ event: 'rate_limited', limiter: 'contact' }, 'Rate limit exceeded');
+    req.log.warn(
+      {
+        event: 'rate_limited',
+        limiter: 'contact',
+        ip: req.ip,
+        endpoint: `${req.method} ${req.originalUrl}`,
+        limit: CONTACT_RATE_LIMIT,
+        windowMs: FIFTEEN_MINUTES_MS,
+      },
+      'Rate limit exceeded',
+    );
     sendError(res, options.statusCode, {
       code: ERROR_CODES.RATE_LIMITED,
       message:

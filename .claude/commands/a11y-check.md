@@ -38,7 +38,7 @@ Report findings first with file, line, the criterion breached, and the fix.
 - [ ] Large text (≥18.66px bold / ≥24px) ≥3:1
 - [ ] UI component boundaries and icons ≥3:1
 - [ ] Verified in **both** light and dark themes
-- [ ] Special attention to white on `#1463FF` (≈4.3:1 — large text only)
+- [ ] Special attention to white on `#1463FF` (4.93:1 — passes AA for normal text; verify every use)
 
 **Forms**
 - [ ] Every control has an associated `<label>`
