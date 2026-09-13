@@ -16,8 +16,12 @@ function deepFreeze<T extends object>(value: T): DeepReadonly<T> {
   return Object.freeze(value) as DeepReadonly<T>;
 }
 
+const legalName = 'NexaStack Technologies';
+const whatsappHref = 'https://wa.me/8801712119253';
+const whatsappPrefilledMessage = `Hello ${legalName}, I would like to discuss a web development project.`;
+
 export const company = deepFreeze({
-  legalName: 'NexaStack Technologies',
+  legalName,
   tagline: 'We Build Better Websites',
   foundingYear: 2026,
 
@@ -46,7 +50,10 @@ export const company = deepFreeze({
   },
   whatsapp: {
     // wa.me requires digits only: no "+", no leading zero.
-    href: 'https://wa.me/8801712119253',
+    href: whatsappHref,
+    prefilledMessage: whatsappPrefilledMessage,
+    /** Click-to-chat link that opens with the prefilled message. */
+    chatHref: `${whatsappHref}?text=${encodeURIComponent(whatsappPrefilledMessage)}`,
   },
 
   // Placeholder — replace with hello@<domain> once registered (CLAUDE.md 22.6).

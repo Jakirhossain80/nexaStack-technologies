@@ -3,21 +3,18 @@
 import { useId } from 'react';
 
 import { cn } from '@/lib/cn';
-import { THEMES, type Theme } from '@/lib/theme';
+import { THEME_LABELS, THEMES } from '@/lib/theme';
 
 import { useTheme } from './ThemeProvider';
-
-const LABELS: Record<Theme, string> = {
-  light: 'Light',
-  dark: 'Dark',
-  system: 'System',
-};
 
 export interface ThemeToggleProps {
   className?: string;
 }
 
-/** Light / dark / system selector. A native radio group: arrow keys move between options. */
+/**
+ * Inline light / dark / system selector with a visible legend, used in the mobile drawer. A native
+ * radio group: arrow keys move between options. The site header uses `ThemeMenu` instead.
+ */
 export function ThemeToggle({ className }: ThemeToggleProps) {
   const { theme, setTheme } = useTheme();
   const name = useId();
@@ -45,7 +42,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
               onChange={() => setTheme(option)}
               className="sr-only"
             />
-            {LABELS[option]}
+            {THEME_LABELS[option]}
           </label>
         ))}
       </div>

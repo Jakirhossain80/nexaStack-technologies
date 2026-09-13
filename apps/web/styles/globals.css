@@ -4,6 +4,19 @@
 /* Class-based dark mode: the pre-paint theme script toggles `.dark` on <html>. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Open/closed state exposed by Radix primitives as `data-state` (dialogs, accordions, menus). */
+@custom-variant state-open (&[data-state='open']);
+@custom-variant state-closed (&[data-state='closed']);
+
+/*
+ * Stored theme preference, written to <html> as `data-theme-preference` by the pre-paint script.
+ * Lets server-rendered markup reflect the user's choice before hydration. A missing attribute
+ * (script blocked) counts as "system", matching the script's own fallback.
+ */
+@custom-variant pref-light (&:where([data-theme-preference='light'] *));
+@custom-variant pref-dark (&:where([data-theme-preference='dark'] *));
+@custom-variant pref-system (&:where(:root:not([data-theme-preference='light'], [data-theme-preference='dark']) *));
+
 /*
  * Semantic token → Tailwind mapping. `inline` makes each utility reference the raw variable
  * directly, so it resolves on the element using it (required for the .light/.dark scopes).
@@ -78,6 +91,54 @@
   --spacing-gutter-sm: 1.25rem; /* 20px mobile */
   --spacing-gutter-md: 2rem; /* 32px tablet */
   --spacing-gutter-lg: 2.5rem; /* 40px desktop */
+
+  /* Motion — CLAUDE.md 7.6 (150–300ms). Mobile menu drawer open/close. */
+  --animate-drawer-in: drawer-in 250ms ease-out;
+  --animate-drawer-out: drawer-out 200ms ease-in;
+
+  @keyframes drawer-in {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes drawer-out {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(100%);
+    }
+  }
+
+  /* Dropdown menu open/close (header theme menu). */
+  --animate-menu-in: menu-in 150ms ease-out;
+  --animate-menu-out: menu-out 150ms ease-in;
+
+  @keyframes menu-in {
+    from {
+      opacity: 0;
+      transform: translateY(-0.25rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes menu-out {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-0.25rem);
+    }
+  }
 }
 
 /* Vertical rhythm for a page section: mobile → tablet (md) → desktop (lg). */

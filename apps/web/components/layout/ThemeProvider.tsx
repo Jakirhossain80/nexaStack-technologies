@@ -12,6 +12,7 @@ import {
 
 import {
   applyResolvedTheme,
+  applyThemePreference,
   DARK_MEDIA_QUERY,
   isTheme,
   THEME_CHANGE_EVENT,
@@ -87,6 +88,11 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   useEffect(() => {
     if (resolvedTheme) applyResolvedTheme(resolvedTheme);
   }, [resolvedTheme]);
+
+  // Keep the preference attribute (set before paint by the init script) in sync after changes.
+  useEffect(() => {
+    if (theme) applyThemePreference(theme);
+  }, [theme]);
 
   const setTheme = useCallback((next: Theme) => {
     try {
