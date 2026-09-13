@@ -9,6 +9,15 @@
 @custom-variant state-closed (&[data-state='closed']);
 
 /*
+ * Stored theme preference, written to <html> as `data-theme-preference` by the pre-paint script.
+ * Lets server-rendered markup reflect the user's choice before hydration. A missing attribute
+ * (script blocked) counts as "system", matching the script's own fallback.
+ */
+@custom-variant pref-light (&:where([data-theme-preference='light'] *));
+@custom-variant pref-dark (&:where([data-theme-preference='dark'] *));
+@custom-variant pref-system (&:where(:root:not([data-theme-preference='light'], [data-theme-preference='dark']) *));
+
+/*
  * Semantic token → Tailwind mapping. `inline` makes each utility reference the raw variable
  * directly, so it resolves on the element using it (required for the .light/.dark scopes).
  */
@@ -102,6 +111,32 @@
     }
     to {
       transform: translateX(100%);
+    }
+  }
+
+  /* Dropdown menu open/close (header theme menu). */
+  --animate-menu-in: menu-in 150ms ease-out;
+  --animate-menu-out: menu-out 150ms ease-in;
+
+  @keyframes menu-in {
+    from {
+      opacity: 0;
+      transform: translateY(-0.25rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes menu-out {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-0.25rem);
     }
   }
 }

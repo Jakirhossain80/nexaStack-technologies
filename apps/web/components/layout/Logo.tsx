@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 
 import { company } from '@/config/company';
@@ -10,11 +11,11 @@ export interface LogoProps {
 }
 
 /**
- * Temporary text lockup for the site header (and later the footer).
+ * Logo lockup for the site header (and later the footer): the raster mark beside a text wordmark.
  *
- * TODO(logo): replace with real artwork once it exists (root CLAUDE.md 22.11). Missing: an SVG
- * horizontal lockup, a mark-only version, and a reversed dark-mode variant. The only existing asset
- * is a square raster PNG on an opaque white background, which must not be used here.
+ * TODO(logo): the wordmark is still lettering standing in for artwork (root CLAUDE.md 22.11). Still
+ * missing: an SVG horizontal lockup and an SVG mark. Swapping either in should be a change to this
+ * file only.
  */
 export function Logo({ className, onNavigate }: LogoProps) {
   return (
@@ -24,10 +25,18 @@ export function Logo({ className, onNavigate }: LogoProps) {
       className={cn('inline-flex min-h-11 shrink-0 items-center gap-2 rounded-field', className)}
     >
       {/*
-       * MARK SLOT — when the SVG mark exists, render it here, e.g.
-       *   <LogoMark aria-hidden="true" className="size-8" />
-       * Swapping the lettering below for the lockup SVG should be a change to this file only.
+       * Decorative: the wordmark beside it already names the company, so a non-empty alt would be
+       * announced twice. Explicit dimensions reserve the box; `preload` because it is above the fold.
+       * 32px is the floor — the isometric detail turns muddy below it.
        */}
+      <Image
+        src="/brand/nexastack-mark.png"
+        alt=""
+        width={36}
+        height={36}
+        preload
+        className="size-8 shrink-0 xl:size-9"
+      />
 
       {/* Lettering is artwork standing in for the logo; the accessible name comes from config. */}
       <span aria-hidden="true" className="flex flex-col">

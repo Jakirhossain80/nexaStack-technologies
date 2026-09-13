@@ -5,7 +5,7 @@ import { DesktopNav } from './DesktopNav';
 import { Logo } from './Logo';
 import { MobileMenu } from './MobileMenu';
 import { StickyHeader } from './StickyHeader';
-import { ThemeToggle } from './ThemeToggle';
+import { ThemeMenu } from './ThemeMenu';
 import { WhatsAppLink } from './WhatsAppLink';
 
 /**
@@ -27,7 +27,7 @@ export function Navbar() {
         {/* gap-1 below xl keeps logo + theme + menu inside a 360px viewport with full gutters. */}
         <div className="ml-auto flex items-center gap-1 xl:ml-0 xl:gap-2">
           {/* Hidden only when the row is narrower than 20rem; the drawer always has it. */}
-          <ThemeToggle variant="compact" className="hidden @xs:inline-flex" />
+          <ThemeMenu className="hidden @xs:inline-flex" />
           <WhatsAppLink iconOnly className="hidden xl:inline-flex" />
           <Button href={navigationActions.quote.href} className="hidden xl:inline-flex">
             {navigationActions.quote.label}
