@@ -8,14 +8,27 @@ export interface HeroCta {
   href: `/${string}`;
 }
 
+export interface HeroHeading {
+  lead: string;
+  /** Trailing phrase given the decorative gradient underline. */
+  highlight: string;
+}
+
+export interface HeroTechnologies {
+  label: string;
+  items: readonly string[];
+}
+
 export interface HeroContent {
   eyebrow: string;
-  heading: string;
+  heading: HeroHeading;
   subheading: string;
   primaryCta: HeroCta;
   secondaryCta: HeroCta;
   /** Qualitative, true-today statements for the hero stat panel — never counters or claims we can't stand behind. */
   stats: readonly string[];
+  /** Floating technology summary beside the hero mockup. Stack facts only. */
+  technologies: HeroTechnologies;
 }
 
 export interface FeaturedServicesContent {
@@ -28,7 +41,7 @@ export interface FeaturedServicesContent {
 export const homeContent = {
   hero: {
     eyebrow: 'Web development studio · Dhaka, Bangladesh',
-    heading: 'MERN and Next.js web development for growing businesses',
+    heading: { lead: 'MERN and Next.js web development for', highlight: 'growing businesses' },
     subheading:
       'NexaStack Technologies is a founder-led studio building fast, accessible websites and web applications — and staying involved after launch.',
     primaryCta: { label: 'Get a Quote', href: '/quotation' },
@@ -38,6 +51,10 @@ export const homeContent = {
       'WCAG AA accessibility as standard',
       'Replies within one business day',
     ],
+    technologies: {
+      label: 'Built with',
+      items: ['Next.js', 'React', 'Node.js', 'Express', 'MongoDB', 'TypeScript'],
+    },
   },
   featuredServices: {
     eyebrow: 'Services',

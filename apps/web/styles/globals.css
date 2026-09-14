@@ -180,6 +180,52 @@
   }
 }
 
+/*
+ * Hero backdrop: a faint 1px line grid in the border token (a "subtle grid pattern", CLAUDE.md 8),
+ * radially masked so it fades out before the section edges. Decorative only.
+ */
+@utility hero-grid {
+  background-image:
+    linear-gradient(to right, var(--nx-border) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--nx-border) 1px, transparent 1px);
+  background-size: 3rem 3rem;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 20%, transparent 75%);
+}
+
+/*
+ * Light-catching sheen for decorative glass artwork (HeroVisual): a diagonal wash of the surface
+ * colour fading to transparent, layered over a translucent pane. `from-*` gradient stops only
+ * accept brand colours, so the surface token needs this utility. Decorative only.
+ */
+@utility glass-sheen {
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--nx-surface) 55%, transparent) 0%,
+    color-mix(in oklab, var(--nx-surface) 10%, transparent) 45%,
+    transparent 70%
+  );
+}
+
+/*
+ * Brand-gradient underline for a highlighted heading phrase (a permitted "decorative line",
+ * CLAUDE.md 7.2). The glyphs keep their own text colour, so heading contrast is unaffected;
+ * `box-decoration-break: clone` repeats the bar on each line when the phrase wraps.
+ */
+@utility gradient-underline {
+  background-image: linear-gradient(
+    to right,
+    var(--nx-cyan),
+    var(--nx-primary-blue),
+    var(--nx-violet)
+  );
+  background-repeat: no-repeat;
+  background-size: 100% 0.1em;
+  background-position: 0 95%;
+  padding-bottom: 0.05em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
 /* The token focus ring. Also applied globally to :focus-visible in the base layer. */
 @utility focus-ring {
   &:focus-visible {
