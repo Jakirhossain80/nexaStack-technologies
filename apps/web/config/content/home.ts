@@ -58,6 +58,13 @@ export interface TechnologyContent {
   viewAllCta: HeroCta;
 }
 
+export interface WhyChooseContent {
+  eyebrow: string;
+  heading: string;
+  subheading: string;
+  closingCta: { heading: string; cta: HeroCta };
+}
+
 export const homeContent = {
   hero: {
     eyebrow: 'Web development studio · Dhaka, Bangladesh',
@@ -101,12 +108,22 @@ export const homeContent = {
     subheading: 'Modern, typed, and production-tested — the same tools across every project.',
     viewAllCta: { label: 'View all technologies', href: '/technologies' },
   },
+  whyChoose: {
+    eyebrow: 'Why NexaStack',
+    heading: 'Built the way client work should be',
+    subheading: 'Not a checklist of buzzwords — the actual practices behind every project.',
+    closingCta: {
+      heading: 'Ready to talk about your project?',
+      cta: { label: 'Get a Quote', href: '/quotation' },
+    },
+  },
 } as const satisfies {
   hero: HeroContent;
   featuredServices: FeaturedServicesContent;
   solutions: SolutionsContent;
   portfolio: PortfolioContent;
   technology: TechnologyContent;
+  whyChoose: WhyChooseContent;
 };
 
 export type HomeContent = typeof homeContent;
