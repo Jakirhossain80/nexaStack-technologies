@@ -676,7 +676,11 @@ Do not silently resolve these. Ask.
    to publish it fully or show only "Uttara, Dhaka, Bangladesh".
 9. **Target market** — local, international, or both. Affects copy, currency, time-zone
    handling and stated response times.
-10. **Service list** — not yet defined. Required before the Services and Solutions pages.
+10. **Service list** — Resolved 2026-09-14: six services — `business-websites`,
+    `mern-nextjs-applications`, `admin-dashboards`, `backend-and-apis`,
+    `maintenance-and-bug-fixing`, `performance-seo-audits`. Defined in
+    `apps/web/config/services.ts`, the single source of truth for the homepage Featured
+    Services section, `/services` and `/services/[slug]`. The Solutions list is still open.
 11. **Logo variants** — only a square raster PNG with a white background exists. A
     horizontal lockup, a mark-only version, a reversed dark-mode version and an SVG are all
     needed.

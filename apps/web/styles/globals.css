@@ -188,6 +188,27 @@
   }
 }
 
+/*
+ * Scroll-triggered entrance (ScrollReveal.tsx): hidden only once JS has "armed" it, then
+ * transitions to visible the moment it intersects the viewport. Without JS, [data-armed] never
+ * appears, so the content stays in its default visible state — no dependency on the animation.
+ */
+@utility scroll-reveal {
+  transition:
+    opacity 250ms ease-out,
+    transform 250ms ease-out;
+
+  &[data-armed] {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+
+  &[data-visible] {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @layer base {
   *,
   ::before,

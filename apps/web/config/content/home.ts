@@ -18,6 +18,13 @@ export interface HeroContent {
   stats: readonly string[];
 }
 
+export interface FeaturedServicesContent {
+  eyebrow: string;
+  heading: string;
+  subheading: string;
+  viewAllCta: HeroCta;
+}
+
 export const homeContent = {
   hero: {
     eyebrow: 'Web development studio · Dhaka, Bangladesh',
@@ -32,6 +39,13 @@ export const homeContent = {
       'Replies within one business day',
     ],
   },
-} as const satisfies { hero: HeroContent };
+  featuredServices: {
+    eyebrow: 'Services',
+    heading: 'What we build',
+    subheading:
+      'From a single landing page to a full-stack application with an admin dashboard behind it.',
+    viewAllCta: { label: 'View all services', href: '/services' },
+  },
+} as const satisfies { hero: HeroContent; featuredServices: FeaturedServicesContent };
 
 export type HomeContent = typeof homeContent;

@@ -1,0 +1,75 @@
+/**
+ * Services — the single source of truth (root CLAUDE.md 22.10, resolved). Read by the homepage
+ * Featured Services section, `/services`, `/services/[slug]` and — later — a navbar dropdown.
+ * Never hardcode a service in a component.
+ */
+
+export type ServiceIcon = 'globe' | 'stack' | 'dashboard' | 'api' | 'wrench' | 'gauge';
+
+export interface Service {
+  slug: string;
+  title: string;
+  summary: string;
+  icon: ServiceIcon;
+  /** Shown in the homepage grid. A future service can be added here without appearing there. */
+  featured: boolean;
+}
+
+export const services: readonly Service[] = [
+  {
+    slug: 'business-websites',
+    title: 'Business website development',
+    summary:
+      'Company sites, landing pages and marketing websites built for speed, search visibility and accessibility from the first commit.',
+    icon: 'globe',
+    featured: true,
+  },
+  {
+    slug: 'mern-nextjs-applications',
+    title: 'MERN and Next.js application development',
+    summary:
+      'Full-stack web applications with React, Node and MongoDB: authentication, dashboards, data-driven interfaces and everything behind them.',
+    icon: 'stack',
+    featured: true,
+  },
+  {
+    slug: 'admin-dashboards',
+    title: 'Admin dashboard development',
+    summary:
+      'Internal tools and content dashboards with role-based access, so your team can manage the site without touching code.',
+    icon: 'dashboard',
+    featured: true,
+  },
+  {
+    slug: 'backend-and-apis',
+    title: 'Backend and API development',
+    summary:
+      'REST APIs with validated inputs, proper error handling and documentation — built to be integrated with, not just to work once.',
+    icon: 'api',
+    featured: true,
+  },
+  {
+    slug: 'maintenance-and-bug-fixing',
+    title: 'Bug fixing and maintenance',
+    summary:
+      'Diagnosing and fixing problems in existing codebases, plus ongoing updates, dependency upgrades and monitoring.',
+    icon: 'wrench',
+    featured: true,
+  },
+  {
+    slug: 'performance-seo-audits',
+    title: 'Performance, SEO and accessibility audits',
+    summary:
+      'A concrete report on what is slowing a site down, hurting its ranking or blocking users, with the fixes prioritised.',
+    icon: 'gauge',
+    featured: true,
+  },
+] as const;
+
+export function getFeaturedServices(): readonly Service[] {
+  return services.filter((service) => service.featured);
+}
+
+export function getServiceBySlug(slug: string): Service | undefined {
+  return services.find((service) => service.slug === slug);
+}
