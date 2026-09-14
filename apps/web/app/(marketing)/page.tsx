@@ -1,3 +1,4 @@
+import { FeaturedPortfolio } from '@/components/sections/FeaturedPortfolio';
 import { FeaturedServices } from '@/components/sections/FeaturedServices';
 import { Hero } from '@/components/sections/Hero';
 import { SolutionsIndustries } from '@/components/sections/SolutionsIndustries';
@@ -9,6 +10,7 @@ export default function HomePage() {
       <Hero content={homeContent.hero} />
       <FeaturedServices content={homeContent.featuredServices} />
       <SolutionsIndustries content={homeContent.solutions} />
+      <FeaturedPortfolio content={homeContent.portfolio} />
     </>
   );
 }
