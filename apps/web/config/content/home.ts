@@ -38,6 +38,12 @@ export interface FeaturedServicesContent {
   viewAllCta: HeroCta;
 }
 
+export interface SolutionsContent {
+  eyebrow: string;
+  heading: string;
+  subheading: string;
+}
+
 export const homeContent = {
   hero: {
     eyebrow: 'Web development studio · Dhaka, Bangladesh',
@@ -63,6 +69,16 @@ export const homeContent = {
       'From a single landing page to a full-stack application with an admin dashboard behind it.',
     viewAllCta: { label: 'View all services', href: '/services' },
   },
-} as const satisfies { hero: HeroContent; featuredServices: FeaturedServicesContent };
+  solutions: {
+    eyebrow: 'Solutions',
+    heading: 'Built for how your business actually runs',
+    subheading:
+      'The same engineering approach, shaped around what each kind of business actually needs.',
+  },
+} as const satisfies {
+  hero: HeroContent;
+  featuredServices: FeaturedServicesContent;
+  solutions: SolutionsContent;
+};
 
 export type HomeContent = typeof homeContent;
