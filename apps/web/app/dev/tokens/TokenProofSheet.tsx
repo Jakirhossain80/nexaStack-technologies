@@ -1,9 +1,9 @@
 /**
- * TEMPORARY — design token proof sheet.
+ * Design token proof sheet — a dev-only tool, not a page linked from anywhere on the site.
  *
  * A development aid for verifying the tokens in styles/tokens.css and styles/globals.css
- * against CLAUDE.md section 7 before any real page is built. Delete this folder when the real
- * homepage replaces it. Not a pattern to copy: real sections live in components/sections/.
+ * against CLAUDE.md section 7 as more sections are built. Not a pattern to copy: real sections
+ * live in components/sections/.
  */
 import { CONTENT_STATUSES, ROLES } from '@nexastack/shared';
 import type { ReactNode } from 'react';
@@ -368,11 +368,11 @@ export function TokenProofSheet() {
           className="flex flex-wrap items-center gap-3 rounded-card border border-error bg-surface p-4"
         >
           <span className="rounded-field border border-error px-2 py-0.5 font-mono text-label font-semibold text-error">
-            TEMPORARY
+            DEV ONLY
           </span>
           <p className="text-body">
-            Development aid only. Replace this page with the real homepage and delete{' '}
-            <code className="font-mono">app/(marketing)/_proof-sheet</code>.
+            Development aid, not linked from the site. A design-token reference for building further
+            sections — see <code className="font-mono">apps/web/CLAUDE.md</code>.
           </p>
         </div>
 

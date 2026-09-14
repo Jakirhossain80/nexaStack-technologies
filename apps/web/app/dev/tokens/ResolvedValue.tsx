@@ -6,7 +6,7 @@ export interface ResolvedValueProps {
 }
 
 /**
- * TEMPORARY (proof sheet). Prints the value a token variable resolves to at this element, so
+ * Dev-tool aid (proof sheet). Prints the value a token variable resolves to at this element, so
  * swatches can be checked against CLAUDE.md 7.1 without hex values in component source.
  */
 export function ResolvedValue({ variable }: ResolvedValueProps) {

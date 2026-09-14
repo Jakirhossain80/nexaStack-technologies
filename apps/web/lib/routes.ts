@@ -18,4 +18,4 @@ export const PUBLIC_ROUTES: readonly PublicRoute[] = [
 ];
 
 /** Areas that must never be crawled. */
-export const DISALLOWED_PATHS: readonly string[] = ['/admin', '/api/'];
+export const DISALLOWED_PATHS: readonly string[] = ['/admin', '/api/', '/dev'];
