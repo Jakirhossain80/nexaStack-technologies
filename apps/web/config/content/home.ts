@@ -51,6 +51,13 @@ export interface PortfolioContent {
   viewAllCta: HeroCta;
 }
 
+export interface TechnologyContent {
+  eyebrow: string;
+  heading: string;
+  subheading: string;
+  viewAllCta: HeroCta;
+}
+
 export const homeContent = {
   hero: {
     eyebrow: 'Web development studio · Dhaka, Bangladesh',
@@ -88,11 +95,18 @@ export const homeContent = {
     subheading: "A closer look at what's been built — with more projects added as they ship.",
     viewAllCta: { label: 'View full portfolio', href: '/portfolio' },
   },
+  technology: {
+    eyebrow: 'Technology',
+    heading: 'The stack behind every build',
+    subheading: 'Modern, typed, and production-tested — the same tools across every project.',
+    viewAllCta: { label: 'View all technologies', href: '/technologies' },
+  },
 } as const satisfies {
   hero: HeroContent;
   featuredServices: FeaturedServicesContent;
   solutions: SolutionsContent;
   portfolio: PortfolioContent;
+  technology: TechnologyContent;
 };
 
 export type HomeContent = typeof homeContent;
