@@ -65,6 +65,12 @@ export interface WhyChooseContent {
   closingCta: { heading: string; cta: HeroCta };
 }
 
+export interface ProcessContent {
+  eyebrow: string;
+  heading: string;
+  subheading: string;
+}
+
 export const homeContent = {
   hero: {
     eyebrow: 'Web development studio · Dhaka, Bangladesh',
@@ -117,6 +123,12 @@ export const homeContent = {
       cta: { label: 'Get a Quote', href: '/quotation' },
     },
   },
+  process: {
+    eyebrow: 'Process',
+    heading: 'How we get from idea to launch',
+    subheading:
+      'A structured process, with you informed at every stage — not a black box between the kickoff call and the invoice.',
+  },
 } as const satisfies {
   hero: HeroContent;
   featuredServices: FeaturedServicesContent;
@@ -124,6 +136,7 @@ export const homeContent = {
   portfolio: PortfolioContent;
   technology: TechnologyContent;
   whyChoose: WhyChooseContent;
+  process: ProcessContent;
 };
 
 export type HomeContent = typeof homeContent;
