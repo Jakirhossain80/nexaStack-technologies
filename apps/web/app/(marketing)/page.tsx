@@ -4,6 +4,7 @@ import { Hero } from '@/components/sections/Hero';
 import { ProcessTimeline } from '@/components/sections/ProcessTimeline';
 import { SolutionsIndustries } from '@/components/sections/SolutionsIndustries';
 import { TechnologyStack } from '@/components/sections/TechnologyStack';
+import { Testimonials } from '@/components/sections/Testimonials';
 import { WhyChooseNexaStack } from '@/components/sections/WhyChooseNexaStack';
 import { homeContent } from '@/config/content/home';
 
@@ -17,6 +18,7 @@ export default function HomePage() {
       <TechnologyStack content={homeContent.technology} />
       <WhyChooseNexaStack content={homeContent.whyChoose} />
       <ProcessTimeline content={homeContent.process} />
+      <Testimonials />
     </>
   );
 }
