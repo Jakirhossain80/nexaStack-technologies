@@ -52,6 +52,21 @@ export const viewport: Viewport = {
   colorScheme: 'light dark',
 };
 
+// Site-wide Organization JSON-LD (root CLAUDE.md section 13). Real, already-established facts
+// only: legal name, site URL, the founder's actual name/title, and the two real social profiles.
+const organizationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: company.legalName,
+  url: env.NEXT_PUBLIC_SITE_URL,
+  founder: {
+    '@type': 'Person',
+    name: company.founder.name,
+    jobTitle: company.founder.jobTitle,
+  },
+  sameAs: [company.social.github, company.social.linkedin],
+};
+
 export interface RootLayoutProps {
   children: ReactNode;
 }
@@ -62,6 +77,10 @@ export default function RootLayout({ children }: Readonly<RootLayoutProps>) {
     <html lang="en" className={cn(geistSans.variable, geistMono.variable)} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
       </head>
       {/*
        * suppressHydrationWarning: a browser extension (not this app) injects a

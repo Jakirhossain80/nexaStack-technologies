@@ -23,6 +23,8 @@ const whatsappPrefilledMessage = `Hello ${legalName}, I would like to discuss a 
 export const company = deepFreeze({
   legalName,
   tagline: 'We Build Better Websites',
+  shortDescription:
+    'A founder-led studio building fast, accessible websites and web applications.',
   foundingYear: 2026,
 
   founder: {
