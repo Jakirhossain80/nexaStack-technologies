@@ -1,3 +1,4 @@
+import { FAQ } from '@/components/sections/FAQ';
 import { FeaturedPortfolio } from '@/components/sections/FeaturedPortfolio';
 import { FeaturedServices } from '@/components/sections/FeaturedServices';
 import { Hero } from '@/components/sections/Hero';
@@ -19,6 +20,7 @@ export default function HomePage() {
       <WhyChooseNexaStack content={homeContent.whyChoose} />
       <ProcessTimeline content={homeContent.process} />
       <Testimonials />
+      <FAQ content={homeContent.faq} />
     </>
   );
 }

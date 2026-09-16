@@ -63,7 +63,16 @@ export default function RootLayout({ children }: Readonly<RootLayoutProps>) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body>
+      {/*
+       * suppressHydrationWarning: a browser extension (not this app) injects a
+       * `__processed_<uuid>__="true"` attribute onto <body> after the server response is
+       * generated — confirmed by the UUID differing on every page load, which nothing in this
+       * codebase can produce (no Math.random/Date.now/locale formatting/window branch anywhere
+       * in apps/web). There is no application-side fix for third-party DOM mutation, so this
+       * only silences the resulting, unactionable warning — it must not be used to hide a real
+       * mismatch.
+       */}
+      <body suppressHydrationWarning>
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:inline-flex focus:min-h-12 focus:items-center focus:rounded-btn focus:border focus:border-default focus:bg-surface focus:px-4 focus:font-semibold focus:text-primary"

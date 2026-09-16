@@ -22,6 +22,10 @@ export const metadata: Metadata = {
 const LOREM =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Placeholder quote text used only to check card layout, line length and contrast — not a real testimonial.';
 
+// Five fixtures so this page exercises the real desktop layout: five cards in one row at
+// ≥1280px (`TestimonialGrid`'s `xl:grid-cols-5`). Deliberately fictional names/companies and
+// lorem-ipsum quotes — none of this could be mistaken for a real client if this route were
+// ever found, per the "no fabricated endorsement" rule in `config/testimonials.ts`.
 const FIXTURES: readonly Testimonial[] = [
   {
     id: 'fixture-one',
@@ -29,6 +33,8 @@ const FIXTURES: readonly Testimonial[] = [
     role: 'Founder',
     company: 'Preview Company Ltd.',
     quote: LOREM,
+    relatedLabel: 'Business websites service',
+    relatedHref: '/services/business-websites',
     // No photo/logo — exercises the initials-avatar fallback.
   },
   {
@@ -40,8 +46,8 @@ const FIXTURES: readonly Testimonial[] = [
     // renders at size — not presented as a real client's logo.
     logo: '/brand/nexastack-mark.png',
     quote: LOREM,
-    relatedLabel: 'Business websites service',
-    relatedHref: '/services/business-websites',
+    relatedLabel: 'MERN and Next.js application development',
+    relatedHref: '/services/mern-nextjs-applications',
   },
   {
     id: 'fixture-three',
@@ -49,7 +55,7 @@ const FIXTURES: readonly Testimonial[] = [
     role: 'Operations Lead',
     company: 'Sample Company Inc.',
     quote: LOREM,
-    // No related link — exercises the card without the optional link row.
+    // No related link and no photo/logo — exercises the minimal card.
   },
   {
     id: 'fixture-four',
@@ -59,6 +65,14 @@ const FIXTURES: readonly Testimonial[] = [
     quote: LOREM,
     relatedLabel: 'Full portfolio',
     relatedHref: '/portfolio',
+  },
+  {
+    id: 'fixture-five',
+    name: 'Preview Client Five',
+    role: 'Operations Manager',
+    company: 'Example Freight Co.',
+    quote: LOREM,
+    // No related link and no photo/logo — second minimal-card instance, fills the five-up row.
   },
 ] as const;
 
@@ -100,15 +114,21 @@ export default function TestimonialsPreviewPage() {
           <div className="max-w-prose">
             <h1 className="text-page font-semibold tracking-tight">Testimonials layout preview</h1>
             <p className="mt-3 text-body-lg text-secondary">
-              Four obviously fictional fixture entries, rendered in both themes, to check card
-              design, grid behaviour and contrast before any real testimonial exists.
+              Five obviously fictional fixture entries, rendered in both themes, to check the
+              five-column desktop row, tablet/mobile wrapping, the quote-mark glyph and contrast
+              before any real testimonial exists.
             </p>
           </div>
           <ThemeToggle />
         </div>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      {/*
+       * Stacked, not side-by-side: each panel needs the full page-container width to actually
+       * reach the `xl:grid-cols-5` breakpoint and show a genuine five-across row at 1280px. A
+       * lg:grid-cols-2 layout here would halve that width and never trigger it.
+       */}
+      <div className="space-y-10">
         <ThemePanel mode="light" />
         <ThemePanel mode="dark" />
       </div>

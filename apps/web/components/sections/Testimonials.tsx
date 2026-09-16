@@ -1,7 +1,7 @@
 import { testimonials } from '@/config/testimonials';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
 
-import { TestimonialCarousel } from './TestimonialCarousel';
+import { TestimonialGrid } from './TestimonialGrid';
 
 /**
  * Homepage Testimonials section, directly below Development Process. Renders nothing — no
@@ -11,8 +11,8 @@ import { TestimonialCarousel } from './TestimonialCarousel';
  * to thread through a `content` prop, only these two strings, which no one edits independently of
  * this file.
  *
- * Server Component; `TestimonialCarousel` is a Client Component leaf (autoplay/scroll state),
- * same boundary-pushing pattern as `ScrollReveal`, the other Client Component this section uses.
+ * Server Component throughout; `TestimonialGrid` is a static grid, not a carousel — see its own
+ * doc comment. `ScrollReveal` is the only Client Component leaf this section uses.
  */
 export function Testimonials() {
   if (testimonials.length === 0) return null;
@@ -30,10 +30,14 @@ export function Testimonials() {
           >
             What people are saying
           </h2>
+          <p className="mt-4 text-label text-secondary">
+            Demo testimonials — fictional names, companies, comments, and AI-generated portraits
+            shown for preview purposes.
+          </p>
         </div>
 
         <div className="mt-10">
-          <TestimonialCarousel testimonials={testimonials} />
+          <TestimonialGrid testimonials={testimonials} />
         </div>
       </ScrollReveal>
     </section>

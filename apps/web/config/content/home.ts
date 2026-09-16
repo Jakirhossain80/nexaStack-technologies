@@ -71,6 +71,12 @@ export interface ProcessContent {
   subheading: string;
 }
 
+export interface FaqContent {
+  eyebrow: string;
+  heading: string;
+  subheading: string;
+}
+
 export const homeContent = {
   hero: {
     eyebrow: 'Web development studio · Dhaka, Bangladesh',
@@ -129,6 +135,11 @@ export const homeContent = {
     subheading:
       'A structured process, with you informed at every stage — not a black box between the kickoff call and the invoice.',
   },
+  faq: {
+    eyebrow: 'FAQ',
+    heading: 'Questions you might have',
+    subheading: "Straight answers — if yours isn't here, ask directly.",
+  },
 } as const satisfies {
   hero: HeroContent;
   featuredServices: FeaturedServicesContent;
@@ -137,6 +148,7 @@ export const homeContent = {
   technology: TechnologyContent;
   whyChoose: WhyChooseContent;
   process: ProcessContent;
+  faq: FaqContent;
 };
 
 export type HomeContent = typeof homeContent;
