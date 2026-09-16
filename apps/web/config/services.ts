@@ -13,6 +13,12 @@ export interface Service {
   icon: ServiceIcon;
   /** Shown in the homepage grid. A future service can be added here without appearing there. */
   featured: boolean;
+  /**
+   * 2–4 technologies from `config/technologies.ts` this service is genuinely built or
+   * delivered with. Omitted where nothing traces cleanly (e.g. an audit service isn't
+   * "built with" a stack) — never padded to satisfy a UI that expects a chip row.
+   */
+  relatedTechnologies?: readonly string[];
 }
 
 export const services: readonly Service[] = [
@@ -23,6 +29,7 @@ export const services: readonly Service[] = [
       'Company sites, landing pages and marketing websites built for speed, search visibility and accessibility from the first commit.',
     icon: 'globe',
     featured: true,
+    relatedTechnologies: ['Next.js', 'React', 'Tailwind CSS'],
   },
   {
     slug: 'mern-nextjs-applications',
@@ -31,6 +38,7 @@ export const services: readonly Service[] = [
       'Full-stack web applications with React, Node and MongoDB: authentication, dashboards, data-driven interfaces and everything behind them.',
     icon: 'stack',
     featured: true,
+    relatedTechnologies: ['Next.js', 'React', 'Node.js', 'MongoDB Atlas'],
   },
   {
     slug: 'admin-dashboards',
@@ -39,6 +47,7 @@ export const services: readonly Service[] = [
       'Internal tools and content dashboards with role-based access, so your team can manage the site without touching code.',
     icon: 'dashboard',
     featured: true,
+    relatedTechnologies: ['Next.js', 'MongoDB Atlas', 'JWT', 'Tailwind CSS'],
   },
   {
     slug: 'backend-and-apis',
@@ -47,6 +56,7 @@ export const services: readonly Service[] = [
       'REST APIs with validated inputs, proper error handling and documentation — built to be integrated with, not just to work once.',
     icon: 'api',
     featured: true,
+    relatedTechnologies: ['Node.js', 'Express.js', 'MongoDB Atlas', 'Mongoose'],
   },
   {
     slug: 'maintenance-and-bug-fixing',
@@ -55,6 +65,7 @@ export const services: readonly Service[] = [
       'Diagnosing and fixing problems in existing codebases, plus ongoing updates, dependency upgrades and monitoring.',
     icon: 'wrench',
     featured: true,
+    relatedTechnologies: ['ESLint', 'Prettier', 'pnpm', 'Git & GitHub'],
   },
   {
     slug: 'performance-seo-audits',
@@ -63,6 +74,10 @@ export const services: readonly Service[] = [
       'A concrete report on what is slowing a site down, hurting its ranking or blocking users, with the fixes prioritised.',
     icon: 'gauge',
     featured: true,
+    // No relatedTechnologies: an audit isn't "built with" a stack, and the tools that would
+    // actually run one (axe-core, Lighthouse) aren't in config/technologies.ts or root
+    // CLAUDE.md §5's stack table — only in §14/§20's testing guidance. Not solid enough to
+    // present here.
   },
 ] as const;
 

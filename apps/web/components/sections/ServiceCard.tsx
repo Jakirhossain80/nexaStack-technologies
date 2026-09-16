@@ -1,10 +1,15 @@
 import Link from 'next/link';
 
+import { Badge } from '@/components/ui/Badge';
 import { ServiceIcon } from '@/components/ui/ServiceIcon';
 import type { Service } from '@/config/services';
 
 export interface ServiceCardProps {
   service: Service;
+  /** 2–4 tags, reusing `Badge` (also used by Featured Portfolio and Technology Stack). Omitted → no chip row, so the homepage's existing card is unaffected. */
+  relatedTechnologies?: readonly string[];
+  /** Visible text on the stretched-link affordance row. */
+  ctaLabel?: string;
 }
 
 /**
@@ -20,7 +25,7 @@ export interface ServiceCardProps {
  * which wins over the plain `@layer base` selector regardless of specificity — and the ring is
  * drawn on the `::before` overlay instead, so it traces the whole card.
  */
-export function ServiceCard({ service }: ServiceCardProps) {
+export function ServiceCard({ service, relatedTechnologies, ctaLabel = 'Learn more' }: ServiceCardProps) {
   return (
     <div className="group relative flex h-full flex-col rounded-card border border-default bg-surface p-6 shadow-card transition duration-150 ease-out hover:border-default-hover hover:shadow-card-hover">
       <span className="inline-flex size-11 items-center justify-center rounded-field bg-background-alt">
@@ -38,11 +43,21 @@ export function ServiceCard({ service }: ServiceCardProps) {
 
       <p className="mt-2 flex-1 text-body text-secondary">{service.summary}</p>
 
+      {relatedTechnologies && relatedTechnologies.length > 0 && (
+        <ul className="mt-4 flex flex-wrap gap-2">
+          {relatedTechnologies.map((tech) => (
+            <li key={tech}>
+              <Badge mono>{tech}</Badge>
+            </li>
+          ))}
+        </ul>
+      )}
+
       <span
         aria-hidden="true"
         className="mt-4 inline-flex items-center gap-1 text-body font-semibold text-primary-blue"
       >
-        Learn more
+        {ctaLabel}
         <svg
           viewBox="0 0 20 20"
           fill="none"
