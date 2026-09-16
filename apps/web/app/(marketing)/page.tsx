@@ -1,6 +1,7 @@
 import { FAQ } from '@/components/sections/FAQ';
 import { FeaturedPortfolio } from '@/components/sections/FeaturedPortfolio';
 import { FeaturedServices } from '@/components/sections/FeaturedServices';
+import { FinalCTA } from '@/components/sections/FinalCTA';
 import { Hero } from '@/components/sections/Hero';
 import { ProcessTimeline } from '@/components/sections/ProcessTimeline';
 import { SolutionsIndustries } from '@/components/sections/SolutionsIndustries';
@@ -21,6 +22,7 @@ export default function HomePage() {
       <ProcessTimeline content={homeContent.process} />
       <Testimonials />
       <FAQ content={homeContent.faq} />
+      <FinalCTA />
     </>
   );
 }
