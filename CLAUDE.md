@@ -170,6 +170,9 @@ All versions are exact pins. `zod`, `typescript` and `@types/node` are pinned on
 | web | tailwind-merge | 3.7.0 |
 | web | @radix-ui/react-dialog | 1.1.23 |
 | web | @radix-ui/react-dropdown-menu | 2.1.24 |
+| web | react-hook-form | 7.65.0 |
+| web | @hookform/resolvers | 5.2.2 |
+| web, api | mongoose | 9.10.0 *(catalog)* |
 | web (dev) | @types/react / @types/react-dom | 19.3.0 |
 | api | express | 5.2.1 |
 | api | mongoose | 9.10.0 |
@@ -667,7 +670,12 @@ Do not silently resolve these. Ask.
 4. **Transactional email provider** — Resend, Postmark or Brevo.
 5. **Render hosting tier** — the free tier sleeps and adds ~30s to the first request.
    Unacceptable for a contact form. Either pay, or serve contact/quotation from Next.js
-   Route Handlers and reserve Express for the admin API.
+   Route Handlers and reserve Express for the admin API. Resolved 2026-09-18 **for contact
+   only**: `/contact` submits to `apps/web/app/api/contact/route.ts` (a Route Handler), not
+   the Express API. The Express contact scaffold (`apps/api/src/routes/contact.routes.ts`
+   and its controller/service/schema) is left in place but orphaned — wired, never called by
+   the live site — rather than deleted, pending a separate decision on removing or
+   repurposing it. Quotation's backend is still unresolved.
 6. **General email address** — `nexastack@mail.com` is a free generic mailbox and weakens
    credibility. Move to `hello@<domain>` once registered. Do not publish an unmonitored
    address.

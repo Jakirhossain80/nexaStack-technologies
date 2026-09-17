@@ -5,6 +5,7 @@ packages:
 # Versions used by more than one workspace. Reference with "catalog:" in package.json.
 catalog:
   '@types/node': 22.20.2
+  mongoose: 9.10.0
   typescript: 6.0.3
   zod: 4.6.2
 

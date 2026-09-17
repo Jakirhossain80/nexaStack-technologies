@@ -1,21 +1,68 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
-// PLACEHOLDER: minimal stub so the navigation can be tested. Replace with the real page; it will
-// then need a canonical URL, share image and JSON-LD (root CLAUDE.md section 13).
+import { ContactDetails } from '@/components/sections/ContactDetails';
+import { ContactForm } from '@/components/sections/ContactForm';
+import { ScrollReveal } from '@/components/ui/ScrollReveal';
+import { company } from '@/config/company';
+import { navigationActions } from '@/config/navigation';
+import { env } from '@/lib/env';
 
 export const metadata: Metadata = {
   title: 'Contact',
-  description: 'How to get in touch with NexaStack Technologies.',
-  robots: { index: false, follow: false },
+  description: `Get in touch with ${company.legalName} with a question or general inquiry.`,
+  alternates: { canonical: '/contact' },
 };
 
 export default function ContactPage() {
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${env.NEXT_PUBLIC_SITE_URL}/` },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Contact',
+        item: `${env.NEXT_PUBLIC_SITE_URL}/contact`,
+      },
+    ],
+  };
+
   return (
-    <div className="page-container section-y">
-      <h1 className="text-page font-semibold tracking-tight">Contact</h1>
-      <p className="mt-4 max-w-prose text-body-lg text-secondary">
-        This page will explain how to get in touch and will include the contact form.
-      </p>
-    </div>
+    <>
+      <section aria-labelledby="contact-heading" className="bg-background">
+        <div className="page-container section-y">
+          <ScrollReveal>
+            <div className="mx-auto max-w-2xl text-center">
+              <h1 id="contact-heading" className="text-page font-semibold tracking-tight text-primary">
+                Contact
+              </h1>
+              <p className="mt-4 text-body-lg text-secondary">
+                Have a question or a general inquiry? Send us a message below.
+                Already know the project you want to build?{' '}
+                <Link
+                  href={navigationActions.quote.href}
+                  className="text-primary-blue underline underline-offset-4 hover:text-primary-blue-hover"
+                >
+                  Request a quote
+                </Link>{' '}
+                instead.
+              </p>
+            </div>
+
+            <div className="mx-auto mt-12 grid max-w-5xl grid-cols-1 gap-12 lg:grid-cols-[1.6fr_1fr]">
+              <ContactForm />
+              <ContactDetails />
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+    </>
   );
 }

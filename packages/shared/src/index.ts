@@ -1,10 +1,15 @@
 // Public API of @nexastack/shared. Export explicitly; never `export *`.
 
 // Schemas
-export { contactSchema } from './schemas/contact.js';
+export { contactFormSchema, contactSchema } from './schemas/contact.js';
 
 // Types
-export type { ContactFormValues, ContactInput } from './types/contact.js';
+export type {
+  ContactFormValues,
+  ContactInput,
+  ContactPageFormValues,
+  ContactPageInput,
+} from './types/contact.js';
 export type {
   ApiErrorBody,
   ApiFailure,

@@ -111,8 +111,8 @@ Default: business logic lives in the Express API.
 Route Handlers in `app/api/` are appropriate for:
 
 - Proxying to the Express API where a server-side secret is required
-- Endpoints that must never cold-start (contact/quotation, if that decision is taken —
-  see root `CLAUDE.md` section 22.5)
+- Endpoints that must never cold-start — `/api/contact` (root `CLAUDE.md` section 22.5);
+  quotation's backend is still undecided
 - OG image generation
 - Webhook receivers
 
