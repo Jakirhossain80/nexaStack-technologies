@@ -8,6 +8,8 @@ export interface SolutionCardProps {
   solution: Solution;
   /** The one full-width, larger-emphasis card in the modular layout (startup-mvp-development). */
   emphasized?: boolean;
+  /** Visible text on the stretched-link affordance row — same idea as `ServiceCard`'s prop. */
+  ctaLabel?: string;
 }
 
 /**
@@ -21,7 +23,7 @@ export interface SolutionCardProps {
  * one card. Heading size is intentionally unchanged: `text-card` is the token for every card
  * title, emphasized or not.
  */
-export function SolutionCard({ solution, emphasized = false }: SolutionCardProps) {
+export function SolutionCard({ solution, emphasized = false, ctaLabel = 'Explore' }: SolutionCardProps) {
   return (
     <div
       className={cn(
@@ -64,7 +66,7 @@ export function SolutionCard({ solution, emphasized = false }: SolutionCardProps
         aria-hidden="true"
         className="mt-4 inline-flex items-center gap-1 text-body font-semibold text-primary-blue"
       >
-        Explore
+        {ctaLabel}
         <svg
           viewBox="0 0 20 20"
           fill="none"
