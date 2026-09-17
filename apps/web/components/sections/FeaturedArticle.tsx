@@ -27,7 +27,7 @@ export function FeaturedArticle({ post }: FeaturedArticleProps) {
         {post.coverImage ? (
           <Image
             src={post.coverImage}
-            alt=""
+            alt={post.coverImageAlt ?? ''}
             fill
             sizes="(min-width: 1024px) 50vw, 100vw"
             className="object-cover"

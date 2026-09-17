@@ -281,6 +281,104 @@
   }
 }
 
+/*
+ * Article body prose — targets raw `contentHtml` rendered via `dangerouslySetInnerHTML` on
+ * `/blog/[slug]`, so it can't be styled with `className` on individual JSX elements. Plain nested
+ * selectors, tokens only, same technique as `hero-grid`/`glass-sheen`/`gradient-underline` above.
+ */
+@utility article-prose {
+  max-width: 70ch; /* CLAUDE.md 7.3 body line length, 60-75 characters */
+  color: var(--nx-text-secondary);
+  font-size: var(--text-body-lg);
+  line-height: var(--text-body-lg--line-height);
+
+  & > * + * {
+    margin-top: 1.25em;
+  }
+
+  & h2,
+  & h3 {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--nx-text-primary);
+    scroll-margin-top: 6rem;
+  }
+
+  & h2 {
+    margin-top: 2.5em;
+    font-size: var(--text-section);
+    line-height: var(--text-section--line-height);
+  }
+
+  & h3 {
+    margin-top: 2em;
+    font-size: var(--text-card);
+    line-height: var(--text-card--line-height);
+  }
+
+  & a {
+    color: var(--nx-primary-blue);
+    text-underline-offset: 4px;
+    text-decoration: underline;
+  }
+
+  & a:hover {
+    color: var(--nx-primary-blue-hover);
+  }
+
+  & ul,
+  & ol {
+    padding-inline-start: 1.5em;
+  }
+
+  & ul {
+    list-style-type: disc;
+  }
+
+  & ol {
+    list-style-type: decimal;
+  }
+
+  & li + li {
+    margin-top: 0.5em;
+  }
+
+  & blockquote {
+    border-inline-start: 2px solid var(--nx-border);
+    padding-inline-start: 1em;
+    font-style: italic;
+    color: var(--nx-text-secondary);
+  }
+
+  & pre {
+    overflow-x: auto;
+    border-radius: var(--radius-field);
+    border: 1px solid var(--nx-border);
+    background-color: var(--nx-background-alt);
+    padding: 1rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    line-height: 1.6;
+    color: var(--nx-text-primary);
+  }
+
+  & code {
+    font-family: var(--font-mono);
+  }
+
+  & :not(pre) > code {
+    border-radius: 0.25rem;
+    background-color: var(--nx-background-alt);
+    padding: 0.15em 0.4em;
+    font-size: 0.9em;
+    color: var(--nx-text-primary);
+  }
+
+  & img {
+    border-radius: var(--radius-media);
+  }
+}
+
 @layer base {
   *,
   ::before,

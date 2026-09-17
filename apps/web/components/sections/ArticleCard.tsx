@@ -26,7 +26,13 @@ export function ArticleCard({ post }: ArticleCardProps) {
     <article className="flex h-full flex-col overflow-hidden rounded-card border border-default bg-surface shadow-card transition duration-150 ease-out hover:border-default-hover hover:shadow-card-hover">
       <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-t-card bg-background-alt">
         {post.coverImage ? (
-          <Image src={post.coverImage} alt="" fill sizes="(min-width: 1024px) 33vw, 100vw" className="object-cover" />
+          <Image
+            src={post.coverImage}
+            alt={post.coverImageAlt ?? ''}
+            fill
+            sizes="(min-width: 1024px) 33vw, 100vw"
+            className="object-cover"
+          />
         ) : (
           <div aria-hidden="true" className="absolute inset-0 flex flex-col">
             <div className="flex h-8 shrink-0 items-center gap-1.5 border-b border-default/70 bg-surface px-3">

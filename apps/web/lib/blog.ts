@@ -15,6 +15,8 @@ export interface BlogPost {
   category: string;
   tags: string[];
   coverImage?: string;
+  /** Required in practice whenever `coverImage` is set — a content image needs real alt text. */
+  coverImageAlt?: string;
   publishedAt: string;
   featured?: boolean;
 }
@@ -35,6 +37,40 @@ export function getCategories(): string[] {
 /** Derived from real posts, never hardcoded ahead of real content. */
 export function getTags(): string[] {
   return Array.from(new Set(getAllPosts().flatMap((post) => post.tags))).sort();
+}
+
+export interface BlogPostDetail extends BlogPost {
+  /** Real founder identity (config/company.ts) — no multi-author scheme this project doesn't need. */
+  author: { name: string; role: string };
+  /** Pre-rendered, trusted HTML — sanitized/authored at build time by whichever real pipeline
+   * gets chosen later (CLAUDE.md section 22 item 3). This template only renders it safely. */
+  contentHtml: string;
+  tableOfContents: { id: string; text: string; level: 2 | 3 }[];
+  /** Computed via `computeReadingTime`, never hand-typed. */
+  readingTimeMinutes: number;
+}
+
+export function getPost(_slug: string): BlogPostDetail | null {
+  return null;
+}
+
+/** Once real: getAllPosts() minus this post, filtered by shared category/tag. */
+export function getRelatedPosts(_slug: string): BlogPost[] {
+  return [];
+}
+
+/**
+ * Reading time computed from contentHtml's real word count — same "compute, don't hardcode"
+ * discipline as the Footer's copyright year. 225 wpm is a commonly cited average adult reading
+ * speed.
+ */
+export function computeReadingTime(contentHtml: string, wordsPerMinute = 225): number {
+  const words = contentHtml
+    .replace(/<[^>]+>/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+  return Math.max(1, Math.ceil(words / wordsPerMinute));
 }
 
 export interface BlogQueryParams {
