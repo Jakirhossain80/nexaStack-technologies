@@ -15,6 +15,7 @@ export interface PublicRoute {
  */
 export const PUBLIC_ROUTES: readonly PublicRoute[] = [
   { path: '/', changeFrequency: 'monthly', priority: 1 },
+  { path: '/blog', changeFrequency: 'weekly', priority: 0.6 },
 ];
 
 /** Areas that must never be crawled. */
