@@ -30,7 +30,16 @@ export const projects: readonly Project[] = [
     summary:
       'A full-stack job portal with separate candidate, employer and admin experiences — job listings, applications, and role-based dashboards.',
     image: '/images/portfolio/careerbridge.png',
-    tags: ['Next.js', 'React', 'TypeScript', 'Tailwind CSS', 'Express', 'MongoDB'],
+    tags: [
+      'Next.js',
+      'React',
+      'TypeScript',
+      'Tailwind CSS',
+      'Express',
+      'MongoDB',
+      'Firebase Authentication',
+      'JWT',
+    ],
     // Known bugs: authentication/redirect flow issues, incomplete RBAC enforcement. Flip to
     // 'live' once those are fixed — nothing else needs to change.
     status: 'in-development',
