@@ -1,52 +1,30 @@
-import Link from 'next/link';
-
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/Accordion';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
 import { WhatsAppLink } from '@/components/layout/WhatsAppLink';
 import { Button } from '@/components/ui/Button';
 import type { FaqContent } from '@/config/content/home';
-import { faqItems, type FaqItem } from '@/config/faq';
+import { faqItems } from '@/config/faq';
+import { renderFaqAnswer } from '@/lib/faq';
 
 export interface FAQProps {
   content: FaqContent;
 }
 
-const INLINE_LINK_CLASSES =
-  'rounded-field text-primary-blue underline-offset-4 focus-ring hover:text-primary-blue-hover hover:underline';
-
-/** Renders `item.answer`, swapping any `inlineLinks` substrings for real links. Same text either way. */
-function renderAnswer(item: FaqItem) {
-  const links = item.inlineLinks;
-  if (!links || links.length === 0) return item.answer;
-
-  const pattern = new RegExp(`(${links.map((link) => escapeRegExp(link.text)).join('|')})`, 'g');
-  return item.answer.split(pattern).map((part, index) => {
-    const link = links.find((candidate) => candidate.text === part);
-    return link ? (
-      <Link key={index} href={link.href} className={INLINE_LINK_CLASSES}>
-        {part}
-      </Link>
-    ) : (
-      <span key={index}>{part}</span>
-    );
-  });
-}
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 /**
  * Homepage FAQ section, directly below Testimonials — a single-column disclosure list, not
  * another card grid. Server Component; `Accordion` (components/ui/Accordion.tsx) is the only
- * Client Component here, for the Radix open/close state. `FAQPage` JSON-LD is built straight
- * from `faqItems` below, so it cannot drift from the visible content.
+ * Client Component here, for the Radix open/close state. Shows only the curated
+ * `showOnHomepage` subset — everything (13 items across 5 categories, with search and category
+ * filtering) lives at `/faq`. `FAQPage` JSON-LD is built from that same subset, so it cannot
+ * drift from what's actually visible here.
  */
 export function FAQ({ content }: FAQProps) {
+  const homepageFaqItems = faqItems.filter((item) => item.showOnHomepage);
+
   const faqJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: faqItems.map((item) => ({
+    mainEntity: homepageFaqItems.map((item) => ({
       '@type': 'Question',
       name: item.question,
       acceptedAnswer: { '@type': 'Answer', text: item.answer },
@@ -65,11 +43,11 @@ export function FAQ({ content }: FAQProps) {
         </div>
 
         <Accordion type="multiple" className="mt-10 max-w-2xl border-t border-default">
-          {faqItems.map((item) => (
+          {homepageFaqItems.map((item) => (
             <AccordionItem key={item.id} value={item.id}>
               <AccordionTrigger>{item.question}</AccordionTrigger>
               <AccordionContent>
-                <p>{renderAnswer(item)}</p>
+                <p>{renderFaqAnswer(item)}</p>
               </AccordionContent>
             </AccordionItem>
           ))}

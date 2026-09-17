@@ -674,8 +674,10 @@ Do not silently resolve these. Ask.
 7. **Business type** — not specified. Needed for legal pages and `Organization` JSON-LD.
 8. **Address publication** — the supplied address is residential in format. Decide whether
    to publish it fully or show only "Uttara, Dhaka, Bangladesh".
-9. **Target market** — local, international, or both. Affects copy, currency, time-zone
-   handling and stated response times.
+9. **Target market** — Resolved 2026-09-17: local and international both. NexaStack works
+   with clients in Bangladesh and remotely elsewhere, through the same real channels
+   (consultation, quotation form, WhatsApp) either way. Currency, time-zone handling and
+   stated response times for international engagements are not yet decided — still open.
 10. **Service list** — Resolved 2026-09-14: six services — `business-websites`,
     `mern-nextjs-applications`, `admin-dashboards`, `backend-and-apis`,
     `maintenance-and-bug-fixing`, `performance-seo-audits`. Defined in
