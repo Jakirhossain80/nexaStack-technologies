@@ -56,6 +56,33 @@ const envSchema = z.object({
 
   LOG_LEVEL: z.preprocess(emptyToUndefined, z.enum(LOG_LEVELS).default('info')),
 
+  // REQUIRED. Signs and verifies admin session JWTs (root CLAUDE.md 11.3). No default — a
+  // fallback secret baked into the app would defeat the point of a secret. Generate a long
+  // random value per environment; never reuse the same one across dev/staging/production.
+  JWT_SECRET: z.preprocess(
+    emptyToUndefined,
+    requiredString('a long random string, e.g. `openssl rand -hex 32`').min(32, {
+      error: 'must be at least 32 characters — a short secret is brute-forceable',
+    }),
+  ),
+
+  // REQUIRED. The public web app's origin, used only to build the password-reset link sent to
+  // the admin (e.g. `${WEB_APP_URL}/admin/reset-password?token=...`). Distinct from
+  // CORS_ORIGINS (which may list more than one origin) so this one, specific use has an
+  // unambiguous value.
+  WEB_APP_URL: z.preprocess(
+    emptyToUndefined,
+    z
+      .url({
+        protocol: /^https?$/,
+        error: (issue) =>
+          issue.input === undefined
+            ? 'is required but not set (the public web app origin, e.g. http://localhost:3000)'
+            : 'must be an absolute http(s) URL',
+      })
+      .transform((url) => new URL(url).origin),
+  ),
+
   // Number of reverse-proxy hops in front of the API (Render: 1). Needed so rate limiting
   // sees the real client IP. 0 = trust none (local development).
   TRUST_PROXY: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).default(0)),

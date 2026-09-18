@@ -40,6 +40,18 @@ export class NotFoundError extends AppError {
   }
 }
 
+export class UnauthenticatedError extends AppError {
+  constructor(message = 'Please sign in to continue.') {
+    super(401, ERROR_CODES.UNAUTHENTICATED, message);
+  }
+}
+
+export class ForbiddenError extends AppError {
+  constructor(message = "You don't have permission to do that.") {
+    super(403, ERROR_CODES.FORBIDDEN, message);
+  }
+}
+
 export class ServiceUnavailableError extends AppError {
   constructor(message: string, options: AppErrorOptions = {}) {
     super(503, ERROR_CODES.SERVICE_UNAVAILABLE, message, options);

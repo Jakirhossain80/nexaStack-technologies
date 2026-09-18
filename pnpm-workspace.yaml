@@ -11,6 +11,7 @@ catalog:
 
 # Dependencies permitted to run install scripts.
 allowBuilds:
+  bcrypt: true
   esbuild: true
   sharp: true
   unrs-resolver: true

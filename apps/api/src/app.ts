@@ -5,6 +5,7 @@ import helmet from 'helmet';
 
 import { env } from './config/env.js';
 import { httpLogger, REQUEST_ID_HEADER } from './lib/httpLogger.js';
+import { CSRF_HEADER_NAME } from './middleware/csrf.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { notFound } from './middleware/notFound.js';
 import { router } from './routes/index.js';
@@ -19,7 +20,10 @@ const corsOptions: CorsOptions = {
   origin: (origin, callback) => callback(null, origin === undefined || allowedOrigins.has(origin)),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-  allowedHeaders: ['Content-Type', REQUEST_ID_HEADER],
+  // CSRF_HEADER_NAME: the custom header the admin CSRF check (middleware/csrf.ts) requires on
+  // every cookie-authenticated mutation — without it here, the browser's preflight rejects the
+  // real request before it's ever sent, since a header not in this allowlist can't be set.
+  allowedHeaders: ['Content-Type', REQUEST_ID_HEADER, CSRF_HEADER_NAME],
   exposedHeaders: [REQUEST_ID_HEADER, 'RateLimit', 'RateLimit-Policy', 'Retry-After'],
   maxAge: 600,
 };

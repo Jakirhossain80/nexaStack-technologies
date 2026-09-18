@@ -11,10 +11,14 @@ export interface AdminLayoutProps {
 }
 
 /**
- * Admin shell. No admin pages exist yet (build phasing is an open decision, CLAUDE.md 22.2).
+ * Outer admin shell — wraps every route under `(admin)`, authenticated or not, so the
+ * `noindex` metadata below inherits down to all of them (verified, not re-declared per page).
  *
- * TODO(admin phase): verify the session server-side here and redirect unauthenticated users.
- * This is a UX guard only — authorisation is enforced by `requireRole` on every API route.
+ * The actual session guard lives one level down, in
+ * `app/(admin)/admin/(protected)/layout.tsx` — `/admin/login`, `/admin/forgot-password` and
+ * `/admin/reset-password` sit outside that nested group specifically so they're reachable
+ * without a session. This is a UX guard only; authorisation is always re-enforced by
+ * `requireSession`/`requireRole` on the API route itself, never by the UI alone.
  */
 export default function AdminLayout({ children }: Readonly<AdminLayoutProps>) {
   return <main id="main-content">{children}</main>;

@@ -2,6 +2,7 @@
 
 // Schemas
 export { contactFormSchema, contactSchema } from './schemas/contact.js';
+export { loginSchema, passwordResetConfirmSchema, passwordResetRequestSchema } from './schemas/auth.js';
 export {
   ATTACHMENT_ACCEPTED_EXTENSIONS,
   ATTACHMENT_ACCEPTED_TYPES,
@@ -21,6 +22,7 @@ export {
 } from './schemas/quotation.js';
 
 // Types
+export type { LoginInput, PasswordResetConfirmInput, PasswordResetRequestInput } from './types/auth.js';
 export type {
   ContactFormValues,
   ContactInput,
