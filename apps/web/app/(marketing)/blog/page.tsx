@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Pagination } from '@/components/ui/Pagination';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
 import { company } from '@/config/company';
+import { navigationActions } from '@/config/navigation';
 import { env } from '@/lib/env';
 import {
   filterAndPaginatePosts,
@@ -119,11 +120,15 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
       <ScrollReveal className="mt-12 max-w-prose border-t border-default pt-10">
         <h2 className="text-section font-semibold tracking-tight text-primary">Looking for something else?</h2>
         <p className="mt-4 text-body-lg text-secondary">
-          Explore {company.legalName}&rsquo;s services, or get in touch about your project.
+          Explore {company.legalName}&rsquo;s services, or tell us what you&rsquo;re building and
+          get a project-specific quote.
         </p>
-        <Button href="/services" className="mt-6">
-          Explore Services
-        </Button>
+        <div className="mt-6 flex flex-col gap-4 sm:flex-row">
+          <Button href={navigationActions.quote.href}>{navigationActions.quote.label}</Button>
+          <Button href="/services" variant="secondary">
+            Explore Services
+          </Button>
+        </div>
       </ScrollReveal>
 
       <script

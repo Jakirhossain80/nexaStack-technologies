@@ -5,6 +5,8 @@
  * legal pages. Never hardcode any of them in a component.
  */
 
+import { getWhatsAppLink } from '@/lib/whatsapp';
+
 type DeepReadonly<T> = { readonly [K in keyof T]: DeepReadonly<T[K]> };
 
 function deepFreeze<T extends object>(value: T): DeepReadonly<T> {
@@ -17,7 +19,6 @@ function deepFreeze<T extends object>(value: T): DeepReadonly<T> {
 }
 
 const legalName = 'NexaStack Technologies';
-const whatsappHref = 'https://wa.me/8801712119253';
 const whatsappPrefilledMessage = `Hello ${legalName}, I would like to discuss a web development project.`;
 
 export const company = deepFreeze({
@@ -51,11 +52,10 @@ export const company = deepFreeze({
     href: 'tel:+8801712119253',
   },
   whatsapp: {
-    // wa.me requires digits only: no "+", no leading zero.
-    href: whatsappHref,
+    href: getWhatsAppLink(),
     prefilledMessage: whatsappPrefilledMessage,
     /** Click-to-chat link that opens with the prefilled message. */
-    chatHref: `${whatsappHref}?text=${encodeURIComponent(whatsappPrefilledMessage)}`,
+    chatHref: getWhatsAppLink(whatsappPrefilledMessage),
   },
 
   // Placeholder — replace with hello@<domain> once registered (CLAUDE.md 22.6).
