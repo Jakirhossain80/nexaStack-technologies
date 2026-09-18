@@ -19,9 +19,9 @@ const contactSubmissionSchema = new Schema(
       enum: ['email', 'phone', 'whatsapp'],
     },
     consent: { type: Boolean, required: true },
-    // No admin interface exists yet to transition this (root CLAUDE.md 22.2); left open rather
-    // than enum-restricted so that work can define the full set of values when it's built.
-    status: { type: String, required: true, default: 'new' },
+    // The Admin Dashboard task defined the real transition this admin interface uses:
+    // new -> responded, toggled from /admin/enquiries/[id] via apps/api's PATCH endpoint.
+    status: { type: String, required: true, enum: ['new', 'responded'], default: 'new' },
   },
   { timestamps: { createdAt: true, updatedAt: false } },
 );

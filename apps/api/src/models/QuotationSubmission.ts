@@ -1,31 +1,35 @@
-import { Schema, model, models, type InferSchemaType } from 'mongoose';
+import mongoose, { type InferSchemaType, type Model } from 'mongoose';
+
+// See AdminUser.ts's comment: named imports from 'mongoose' don't reliably resolve under
+// Node's raw ESM loader in this pure-Node project.
+const { Schema, model, models } = mongoose;
 
 /**
- * A validated `/quotation` page submission. Fields mirror `quotationSchema` from
- * `@nexastack/shared` exactly — Zod is the security boundary (validated before this document
- * is constructed); these constraints are the second layer required by root CLAUDE.md 11.5.
+ * Read + status-update mirror of `apps/web/lib/models/QuotationSubmission.ts` — that file
+ * remains the canonical, write-owning schema (the public `/quotation` form persists
+ * through apps/web's own Route Handler, not through this API). Both apps point at the same
+ * MongoDB database (see apps/web/.env.example and apps/api/.env.example) and the same
+ * model name, so this resolves to the identical `quotationsubmissions` collection.
+ *
+ * `status` gets a real enum here (and in the canonical schema) now that this admin
+ * interface exists to transition it — previously left open by design.
  */
 const quotationSubmissionSchema = new Schema(
   {
-    // Traceable to the confirmation number shown to the submitter — derived from this same
-    // document's real _id at insert time (see apps/web/app/api/quotation/route.ts).
     referenceNumber: { type: String, required: true, unique: true },
 
-    // Step 1 — Client information
     fullName: { type: String, required: true, trim: true, maxlength: 120 },
     email: { type: String, required: true, trim: true, maxlength: 254 },
     telephone: { type: String, required: true, trim: true, maxlength: 30 },
     companyName: { type: String, trim: true, maxlength: 160 },
     country: { type: String, required: true, trim: true },
 
-    // Step 2 — Project information
     projectType: { type: String, required: true },
     requiredServices: { type: [String], required: true },
     businessObjectives: { type: String, required: true, trim: true, maxlength: 2000 },
     targetUsers: { type: String, required: true, trim: true, maxlength: 500 },
     projectStatus: { type: String, required: true, enum: ['new', 'existing'] },
 
-    // Step 3 — Project requirements
     requiredFeatures: { type: String, required: true, trim: true, maxlength: 2000 },
     numberOfPages: { type: String, required: true },
     designRequirements: { type: String, required: true },
@@ -34,30 +38,23 @@ const quotationSubmissionSchema = new Schema(
     integrations: { type: String, trim: true, maxlength: 1000 },
     referenceWebsites: { type: [String], default: undefined },
 
-    // Step 4 — Budget and timeline
     budgetRange: { type: String, required: true },
     preferredStartDate: { type: String, required: true },
     targetCompletionDate: { type: String },
     maintenanceRequired: { type: String, required: true, enum: ['yes', 'no', 'not-sure'] },
 
-    // Step 5 — Final submission
     attachments: { type: [String], default: undefined },
     additionalMessage: { type: String, trim: true, maxlength: 2000 },
     consent: { type: Boolean, required: true },
 
-    // The Admin Dashboard task defined the real transition this admin interface uses:
-    // new -> responded, toggled from /admin/quotations/[id] via apps/api's PATCH endpoint.
     status: { type: String, required: true, enum: ['new', 'responded'], default: 'new' },
   },
   { timestamps: { createdAt: true, updatedAt: false } },
 );
 
-quotationSubmissionSchema.index({ createdAt: -1 });
-quotationSubmissionSchema.index({ status: 1 });
-
 export type QuotationSubmissionDocument = InferSchemaType<typeof quotationSubmissionSchema>;
 
-// `models.QuotationSubmission` is reused across hot reloads in development so Mongoose doesn't
-// throw "Cannot overwrite model once compiled".
+// Explicit Model<T> on both sides of `??` — see AdminUser.ts's comment for why.
 export const QuotationSubmission =
-  models.QuotationSubmission ?? model('QuotationSubmission', quotationSubmissionSchema);
+  (models.QuotationSubmission as Model<QuotationSubmissionDocument> | undefined) ??
+  model<QuotationSubmissionDocument>('QuotationSubmission', quotationSubmissionSchema);

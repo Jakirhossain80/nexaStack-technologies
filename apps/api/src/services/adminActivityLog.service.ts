@@ -27,6 +27,8 @@ export async function logAdminActivity(input: LogAdminActivityInput): Promise<vo
   });
 }
 
+/** Default page size for the full `/admin/activity` page. The dashboard's compact feed
+ * passes a smaller explicit limit instead (see routes/admin.routes.ts). */
 const RECENT_ACTIVITY_LIMIT = 100;
 
 export interface RecentActivityEntry {
@@ -38,13 +40,12 @@ export interface RecentActivityEntry {
   createdAt: Date;
 }
 
-/** Read-only, for `/admin/activity` — the founder's own visibility into login/activity
- * history. `.lean()` since this is display-only, per root CLAUDE.md 11.5. */
-export async function listRecentAdminActivity(): Promise<RecentActivityEntry[]> {
-  const entries = await AdminActivityLog.find()
-    .sort({ createdAt: -1 })
-    .limit(RECENT_ACTIVITY_LIMIT)
-    .lean();
+/** Read-only, for `/admin/activity` and the dashboard's compact activity feed. `.lean()`
+ * since this is display-only, per root CLAUDE.md 11.5. */
+export async function listRecentAdminActivity(
+  limit: number = RECENT_ACTIVITY_LIMIT,
+): Promise<RecentActivityEntry[]> {
+  const entries = await AdminActivityLog.find().sort({ createdAt: -1 }).limit(limit).lean();
 
   return entries.map((entry) => ({
     id: entry._id.toString(),

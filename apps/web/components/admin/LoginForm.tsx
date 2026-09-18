@@ -54,7 +54,7 @@ export function LoginForm() {
         return;
       }
 
-      router.push('/admin/activity');
+      router.push('/admin');
       router.refresh();
     } catch {
       setServerError('Something went wrong signing in. Please check your connection and try again.');
