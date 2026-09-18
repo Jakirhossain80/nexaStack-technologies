@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
@@ -131,7 +132,11 @@ export default function PrivacyPolicyPage() {
               <a href="#third-party-services" className={LINK_CLASSES}>
                 Third-Party Services
               </a>
-              , each of which has its own privacy policy.
+              , each of which has its own privacy policy. See also our{' '}
+              <Link href="/terms-and-conditions" className={LINK_CLASSES}>
+                Terms and Conditions
+              </Link>{' '}
+              for the terms governing use of this website and its services.
             </p>
           </section>
 
