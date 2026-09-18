@@ -21,6 +21,12 @@ const serverEnvSchema = z.object({
   ),
   // Optional: unset in development skips Turnstile verification (see lib/turnstile.ts).
   TURNSTILE_SECRET_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
+  // Optional: unset until a real Cloudinary account is configured. When any of the three is
+  // missing, /api/quotation/upload returns a clear "not available yet" error instead of a fake
+  // success (see lib/cloudinary.ts).
+  CLOUDINARY_CLOUD_NAME: z.preprocess(emptyToUndefined, z.string().optional()),
+  CLOUDINARY_API_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
+  CLOUDINARY_API_SECRET: z.preprocess(emptyToUndefined, z.string().optional()),
 });
 
 function loadServerEnv() {

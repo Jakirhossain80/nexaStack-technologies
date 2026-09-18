@@ -1,21 +1,54 @@
 import type { Metadata } from 'next';
 
-// PLACEHOLDER: minimal stub so the navigation can be tested. Replace with the real page; it will
-// then need a canonical URL, share image and JSON-LD (root CLAUDE.md section 13).
+import { QuotationWizard } from '@/components/sections/QuotationWizard';
+import { env } from '@/lib/env';
 
 export const metadata: Metadata = {
   title: 'Get a Quote',
-  description: 'Request a quotation for a website or web application project.',
-  robots: { index: false, follow: false },
+  description:
+    'Tell us about your project in five short steps and request a quotation for a website, web application or backend build.',
+  alternates: { canonical: '/quotation' },
 };
 
 export default function QuotationPage() {
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${env.NEXT_PUBLIC_SITE_URL}/` },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Get a Quote',
+        item: `${env.NEXT_PUBLIC_SITE_URL}/quotation`,
+      },
+    ],
+  };
+
   return (
-    <div className="page-container section-y">
-      <h1 className="text-page font-semibold tracking-tight">Get a Quote</h1>
-      <p className="mt-4 max-w-prose text-body-lg text-secondary">
-        This page will hold the quotation request form.
-      </p>
-    </div>
+    <>
+      <section aria-labelledby="quotation-heading" className="bg-background">
+        <div className="page-container section-y">
+          <div className="mx-auto max-w-2xl text-center">
+            <h1 id="quotation-heading" className="text-page font-semibold tracking-tight text-primary">
+              Request a Quote
+            </h1>
+            <p className="mt-4 text-body-lg text-secondary">
+              Tell us about your project in five short steps. We&rsquo;ll review your request and get
+              back to you.
+            </p>
+          </div>
+
+          <div className="mt-12">
+            <QuotationWizard />
+          </div>
+        </div>
+      </section>
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+    </>
   );
 }
