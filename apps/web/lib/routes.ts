@@ -20,6 +20,7 @@ export const PUBLIC_ROUTES: readonly PublicRoute[] = [
   { path: '/technologies', changeFrequency: 'monthly', priority: 0.5 },
   { path: '/process', changeFrequency: 'monthly', priority: 0.5 },
   { path: '/blog', changeFrequency: 'weekly', priority: 0.6 },
+  { path: '/testimonials', changeFrequency: 'monthly', priority: 0.5 },
 ];
 
 /** Areas that must never be crawled. */

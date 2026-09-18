@@ -1,11 +1,15 @@
-import { testimonials } from '@/config/testimonials';
+import { getApprovedTestimonials } from '@/config/testimonials';
+import { Button } from '@/components/ui/Button';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
 
 import { TestimonialGrid } from './TestimonialGrid';
 
+/** How many cards the grid's own `xl:grid-cols-5` is built for — see `TestimonialGrid`. */
+const HOMEPAGE_TESTIMONIAL_COUNT = 5;
+
 /**
  * Homepage Testimonials section, directly below Development Process. Renders nothing — no
- * heading, no landmark, no gap — while `config/testimonials.ts` is empty, so the homepage flows
+ * heading, no landmark, no gap — while there are no approved testimonials, so the homepage flows
  * straight from Development Process to whatever follows. Fixed eyebrow/heading strings are
  * inlined here rather than added to `config/content/home.ts`: there is no per-item homepage copy
  * to thread through a `content` prop, only these two strings, which no one edits independently of
@@ -15,7 +19,15 @@ import { TestimonialGrid } from './TestimonialGrid';
  * doc comment. `ScrollReveal` is the only Client Component leaf this section uses.
  */
 export function Testimonials() {
-  if (testimonials.length === 0) return null;
+  const approved = getApprovedTestimonials();
+  if (approved.length === 0) return null;
+
+  // Featured entries first (if any exist), then the rest, capped to what the grid actually
+  // displays — so a future testimonial marked `featured` is preferred over letting insertion
+  // order alone decide which 5 show up here.
+  const featured = approved.filter((testimonial) => testimonial.featured);
+  const rest = approved.filter((testimonial) => !testimonial.featured);
+  const shown = [...featured, ...rest].slice(0, HOMEPAGE_TESTIMONIAL_COUNT);
 
   return (
     <section aria-labelledby="testimonials-heading" className="page-container section-y">
@@ -37,7 +49,13 @@ export function Testimonials() {
         </div>
 
         <div className="mt-10">
-          <TestimonialGrid testimonials={testimonials} />
+          <TestimonialGrid testimonials={shown} />
+        </div>
+
+        <div className="mt-8">
+          <Button variant="text" href="/testimonials">
+            View all testimonials
+          </Button>
         </div>
       </ScrollReveal>
     </section>

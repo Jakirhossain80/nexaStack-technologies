@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
+import { TestimonialCard } from '@/components/sections/TestimonialCard';
 import { TestimonialGrid } from '@/components/sections/TestimonialGrid';
 import type { Testimonial } from '@/config/testimonials';
 import { cn } from '@/lib/cn';
@@ -9,10 +10,12 @@ import { cn } from '@/lib/cn';
 // Excluded from the sitemap (never added to lib/routes.ts PUBLIC_ROUTES) and from indexing
 // (noindex below, and "/dev" is already in lib/routes.ts DISALLOWED_PATHS for robots.txt).
 //
-// The fixtures below are defined in THIS FILE ONLY, never in config/testimonials.ts, which must
-// stay empty until a real client gives permission to be quoted. Every name/company/quote here is
-// deliberately, obviously fictional ("Preview Client…", lorem-ipsum copy) so nobody could mistake
-// it for a real testimonial if this route were ever stumbled on.
+// The fixtures below are defined in THIS FILE ONLY, never added to config/testimonials.ts.
+// That file currently holds only the 5 owner-requested, homepage-disclosed demo entries — no
+// new fabricated entry (real-looking or demo-labeled) belongs there; every new example needed to
+// build/verify this UI belongs only here. Every name/company/quote below is deliberately,
+// obviously fictional ("Preview Client…", lorem-ipsum copy) so nobody could mistake it for a
+// real testimonial if this route were ever stumbled on.
 
 export const metadata: Metadata = {
   title: 'Testimonials layout preview (dev only)',
@@ -22,63 +25,107 @@ export const metadata: Metadata = {
 const LOREM =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Placeholder quote text used only to check card layout, line length and contrast — not a real testimonial.';
 
-// Five fixtures so this page exercises the real desktop layout: five cards in one row at
-// ≥1280px (`TestimonialGrid`'s `xl:grid-cols-5`). Deliberately fictional names/companies and
-// lorem-ipsum quotes — none of this could be mistaken for a real client if this route were
-// ever found, per the "no fabricated endorsement" rule in `config/testimonials.ts`.
+// Fixtures so this page exercises the real desktop layout: five-plus cards, wrapping past one
+// row at ≥1280px (`TestimonialGrid`'s `xl:grid-cols-5`). Deliberately fictional names/companies
+// and lorem-ipsum quotes — none of this could be mistaken for a real client if this route were
+// ever found, per the "no fabricated endorsement" rule in `config/testimonials.ts`. Every
+// `relatedProjectSlug`/`relatedServiceSlug` below resolves to a real entry in
+// `config/projects.ts`/`config/services.ts` — the whole point of these two fields is that they
+// can't silently drift from what they link to, so the fixtures prove that resolution works.
 const FIXTURES: readonly Testimonial[] = [
   {
     id: 'fixture-one',
-    name: 'Preview Client One',
-    role: 'Founder',
-    company: 'Preview Company Ltd.',
+    clientName: 'Preview Client One',
+    clientPosition: 'Founder',
+    clientCompany: 'Preview Company Ltd.',
     quote: LOREM,
-    relatedLabel: 'Business websites service',
-    relatedHref: '/services/business-websites',
+    relatedServiceSlug: 'business-websites',
+    approved: true,
     // No photo/logo — exercises the initials-avatar fallback.
   },
   {
     id: 'fixture-two',
-    name: 'Preview Client Two',
-    role: 'CTO',
-    company: 'Placeholder Startup',
-    // Reuses the existing NexaStack mark asset purely to prove the `logo` image path
-    // renders at size — not presented as a real client's logo.
-    logo: '/brand/nexastack-mark.png',
+    clientName: 'Preview Client Two',
+    clientPosition: 'CTO',
+    clientCompany: 'Placeholder Startup',
+    // Reuses the existing NexaStack mark asset purely to prove the `companyLogoUrl` image
+    // path renders at size — not presented as a real client's logo.
+    companyLogoUrl: '/brand/nexastack-mark.png',
     quote: LOREM,
-    relatedLabel: 'MERN and Next.js application development',
-    relatedHref: '/services/mern-nextjs-applications',
+    relatedServiceSlug: 'mern-nextjs-applications',
+    approved: true,
   },
   {
     id: 'fixture-three',
-    name: 'Preview Client Three',
-    role: 'Operations Lead',
-    company: 'Sample Company Inc.',
+    clientName: 'Preview Client Three',
+    clientPosition: 'Operations Lead',
+    clientCompany: 'Sample Company Inc.',
     quote: LOREM,
+    approved: true,
     // No related link and no photo/logo — exercises the minimal card.
   },
   {
     id: 'fixture-four',
-    name: 'Preview Client Four',
-    role: 'Product Manager',
-    company: 'Test Organization',
+    clientName: 'Preview Client Four',
+    clientPosition: 'Product Manager',
+    clientCompany: 'Test Organization',
     quote: LOREM,
-    relatedLabel: 'Full portfolio',
-    relatedHref: '/portfolio',
+    relatedServiceSlug: 'admin-dashboards',
+    approved: true,
   },
   {
     id: 'fixture-five',
-    name: 'Preview Client Five',
-    role: 'Operations Manager',
-    company: 'Example Freight Co.',
+    clientName: 'Preview Client Five',
+    clientPosition: 'Operations Manager',
+    clientCompany: 'Example Freight Co.',
     quote: LOREM,
+    approved: true,
     // No related link and no photo/logo — second minimal-card instance, fills the five-up row.
+  },
+  // New fixtures below, covering the fields this task added.
+  {
+    id: 'fixture-six-rating',
+    clientName: 'Preview Client Six',
+    clientPosition: 'Marketing Director',
+    clientCompany: 'Fixture Retail Group',
+    quote: LOREM,
+    rating: 5,
+    relatedServiceSlug: 'performance-seo-audits',
+    approved: true,
+    // Exercises `rating` — a filled 5-star row with the "Rated 5 out of 5" accessible label.
+  },
+  {
+    id: 'fixture-seven-project',
+    clientName: 'Preview Client Seven',
+    clientPosition: 'Head of Product',
+    clientCompany: 'Fixture Hiring Platform',
+    quote: LOREM,
+    rating: 4,
+    // The one real project currently in config/projects.ts — exercises relatedProjectSlug
+    // resolving to a real case-study link ("Read the case study"), not a service link.
+    relatedProjectSlug: 'careerbridge',
+    approved: true,
+  },
+  {
+    id: 'fixture-eight-featured',
+    clientName: 'Preview Client Eight',
+    clientPosition: 'CEO',
+    clientCompany: 'Fixture Logistics Co.',
+    quote: LOREM,
+    rating: 5,
+    relatedServiceSlug: 'backend-and-apis',
+    featured: true,
+    approved: true,
+    // Exercises `featured` — this is the one shown in the featured/large-card section on
+    // /testimonials when fixture data is swapped in for layout checks.
   },
 ] as const;
 
 interface ThemePanelProps {
   mode: 'light' | 'dark';
 }
+
+const featuredFixture = FIXTURES.find((testimonial) => testimonial.featured);
 
 /** Forces a token scope, same technique as TokenProofSheet's ThemePanel. */
 function ThemePanel({ mode }: ThemePanelProps) {
@@ -87,6 +134,19 @@ function ThemePanel({ mode }: ThemePanelProps) {
       <p className="mb-4 font-mono text-label text-secondary">
         {mode === 'light' ? 'Light theme' : 'Dark theme'}
       </p>
+
+      {featuredFixture && (
+        <div className="mb-8">
+          <p className="mb-3 font-mono text-label text-secondary">
+            Featured treatment (size=&quot;featured&quot;) — used at the top of /testimonials
+          </p>
+          <div className="max-w-xl">
+            <TestimonialCard testimonial={featuredFixture} size="featured" />
+          </div>
+        </div>
+      )}
+
+      <p className="mb-3 font-mono text-label text-secondary">Standard grid (size=&quot;default&quot;)</p>
       <TestimonialGrid testimonials={FIXTURES} />
     </div>
   );
@@ -105,7 +165,8 @@ export default function TestimonialsPreviewPage() {
           </span>
           <p className="text-body">
             Layout preview for the Testimonials card grid, using fixture data defined in this file
-            only. <code className="font-mono">config/testimonials.ts</code> stays empty — see{' '}
+            only. New fixture data for layout checks belongs only here, never in{' '}
+            <code className="font-mono">config/testimonials.ts</code> — see{' '}
             <code className="font-mono">apps/web/CLAUDE.md</code>.
           </p>
         </div>
@@ -114,9 +175,10 @@ export default function TestimonialsPreviewPage() {
           <div className="max-w-prose">
             <h1 className="text-page font-semibold tracking-tight">Testimonials layout preview</h1>
             <p className="mt-3 text-body-lg text-secondary">
-              Five obviously fictional fixture entries, rendered in both themes, to check the
-              five-column desktop row, tablet/mobile wrapping, the quote-mark glyph and contrast
-              before any real testimonial exists.
+              Eight obviously fictional fixture entries, rendered in both themes, to check the
+              featured card treatment, the five-column desktop row, tablet/mobile wrapping, star
+              ratings, related-project/service links, and contrast — before any real testimonial
+              with these fields exists.
             </p>
           </div>
           <ThemeToggle />
