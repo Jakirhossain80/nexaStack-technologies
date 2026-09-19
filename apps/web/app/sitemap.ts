@@ -7,7 +7,11 @@ import { caseStudies } from '@/config/case-studies';
 import { projects } from '@/config/projects';
 import { services } from '@/config/services';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+// Blog posts come from the database, so the sitemap is built per request: a statically generated
+// one would omit posts published after the build, and would need database access at build time.
+export const dynamic = 'force-dynamic';
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes = PUBLIC_ROUTES.map((route) => ({
     url: new URL(route.path, env.NEXT_PUBLIC_SITE_URL).toString(),
     changeFrequency: route.changeFrequency,
@@ -37,9 +41,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.6,
     }));
 
-  // Currently empty (getAllPosts() returns []), so this adds nothing yet; each real post
-  // appears here automatically once one exists.
-  const postRoutes = getAllPosts().map((post) => ({
+  // Each published post appears here automatically. If the database is unreachable the sitemap
+  // still lists every static route rather than failing for crawlers; the failure is logged.
+  const posts = await getAllPosts().catch((error: unknown) => {
+    console.error('sitemap: could not load blog posts', error);
+    return [];
+  });
+  const postRoutes = posts.map((post) => ({
     url: new URL(`/blog/${post.slug}`, env.NEXT_PUBLIC_SITE_URL).toString(),
     changeFrequency: 'monthly' as const,
     priority: 0.5,

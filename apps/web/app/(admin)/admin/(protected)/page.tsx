@@ -32,7 +32,11 @@ export default async function AdminDashboardPage() {
   // The full 10-category set (`/technologies`'s own page), not just the homepage's
   // 6-category teaser subset — more representative of the site's real technology content.
   const technologyCategoriesCount = fullTechnologyCategories.length;
-  const blogPostsCount = getAllPosts().length;
+  // Published posts only (that is what `lib/blog.ts` serves); read from MongoDB, and degrades to
+  // "Not available" like the API-backed stats below if the database is unreachable.
+  const blogPostsCount = await getAllPosts()
+    .then((posts) => posts.length)
+    .catch(() => 'Not available' as const);
 
   // Dynamic, MongoDB-backed content — fetched from apps/api.
   const [stats, newEnquiries, newQuotations, activity] = await Promise.all([
@@ -54,7 +58,7 @@ export default async function AdminDashboardPage() {
         <StatCard label="Total solutions" value={solutionsCount} />
         <StatCard label="Total projects" value={projectsCount} />
         <StatCard label="Technology categories" value={technologyCategoriesCount} />
-        <StatCard label="Total blog posts" value={blogPostsCount} />
+        <StatCard label="Published blog posts" value={blogPostsCount} />
         <StatCard
           label="New contact enquiries"
           value={stats ? stats.contact.new : 'Not available'}

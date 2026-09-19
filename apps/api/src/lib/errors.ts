@@ -40,6 +40,14 @@ export class NotFoundError extends AppError {
   }
 }
 
+/** The request is well-formed but conflicts with current state: a duplicate slug, a status
+ * change the workflow doesn't allow, deleting something still in use. */
+export class ConflictError extends AppError {
+  constructor(message: string) {
+    super(409, ERROR_CODES.CONFLICT, message);
+  }
+}
+
 export class UnauthenticatedError extends AppError {
   constructor(message = 'Please sign in to continue.') {
     super(401, ERROR_CODES.UNAUTHENTICATED, message);

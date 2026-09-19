@@ -1,11 +1,26 @@
+import { CONTENT_STATUS, SLUG_PATTERN, type BlogPostAdminDetail } from '@nexastack/shared';
+import { cache } from 'react';
+
+import { company } from '@/config/company';
+import { BlogCategory } from '@/lib/models/BlogCategory';
+import { BlogPost as BlogPostModel } from '@/lib/models/BlogPost';
+import { connectToDatabase } from '@/lib/mongodb';
+
 /**
- * Blog data interface — deliberately stubbed. `CLAUDE.md` root section 22 item 3 leaves the
- * content source unresolved (MDX files, a headless CMS, or an admin dashboard with a rich-text
- * editor), and item 2 phases the blog after the marketing site and a working contact form.
- * Neither has been decided. Every function below returns empty/null on purpose — not broken,
- * not a TODO, a deliberate placeholder pending that decision. The listing page and its
- * components are built in full against this interface so that once a real implementation lands
- * here, nothing else needs to change.
+ * Blog data layer. Reads PUBLISHED posts straight from MongoDB through read-only mirror models
+ * (`lib/models/Blog*.ts`); the Express API owns every write (`/api/v1/admin/blog/*`). Chosen over
+ * a public Express endpoint so the public blog never waits on a sleeping API host (root
+ * CLAUDE.md 22.5). This resolves 22.3: the blog's content source is DB-backed markdown authored
+ * in the admin dashboard.
+ *
+ * Every public query filters on `status: 'published'`. Drafts, unpublished and archived posts
+ * never leave this module. Functions are async because the database is; the exported types and
+ * the pure helpers at the bottom (`filterAndPaginatePosts`, `computeReadingTime`) are unchanged
+ * from the earlier stub, so the listing/detail components did not have to change.
+ *
+ * Reads are wrapped in React's `cache()`, which de-duplicates within ONE server render only (a
+ * page calling `getAllPosts()`, `getCategories()` and `getFeaturedPost()` runs one query, not
+ * three) and never across requests, so an unpublished post cannot linger.
  */
 
 export interface BlogPost {
@@ -21,42 +36,234 @@ export interface BlogPost {
   featured?: boolean;
 }
 
-export function getAllPosts(): BlogPost[] {
-  return [];
-}
-
-export function getFeaturedPost(): BlogPost | null {
-  return null;
-}
-
-/** Derived from real posts, never hardcoded ahead of real content. */
-export function getCategories(): string[] {
-  return Array.from(new Set(getAllPosts().map((post) => post.category))).sort();
-}
-
-/** Derived from real posts, never hardcoded ahead of real content. */
-export function getTags(): string[] {
-  return Array.from(new Set(getAllPosts().flatMap((post) => post.tags))).sort();
-}
-
 export interface BlogPostDetail extends BlogPost {
   /** Real founder identity (config/company.ts) — no multi-author scheme this project doesn't need. */
   author: { name: string; role: string };
-  /** Pre-rendered, trusted HTML — sanitized/authored at build time by whichever real pipeline
-   * gets chosen later (CLAUDE.md section 22 item 3). This template only renders it safely. */
+  /** Pre-rendered, trusted HTML, produced by the API's escaping markdown renderer on save. */
   contentHtml: string;
   tableOfContents: { id: string; text: string; level: 2 | 3 }[];
   /** Computed via `computeReadingTime`, never hand-typed. */
   readingTimeMinutes: number;
 }
 
-export function getPost(_slug: string): BlogPostDetail | null {
-  return null;
+/**
+ * Only reachable if a category document was removed by hand in the database: the API refuses to
+ * delete a category that still has posts. Shown rather than hiding a published post.
+ */
+const UNCATEGORIZED = 'Uncategorized';
+
+/** Fields the listing needs. The body (`contentHtml`, `contentMarkdown`) is deliberately not
+ * loaded for lists: it can be large and nothing on a list page renders it. */
+const SUMMARY_FIELDS = 'slug title excerpt category tags coverImage coverImageAlt publishedAt createdAt featured';
+
+interface SummaryRecord {
+  slug: string;
+  title: string;
+  excerpt: string;
+  category: unknown;
+  tags: string[];
+  coverImage?: string | null;
+  coverImageAlt?: string | null;
+  publishedAt: Date | null;
+  createdAt: Date;
+  featured: boolean;
 }
 
-/** Once real: getAllPosts() minus this post, filtered by shared category/tag. */
-export function getRelatedPosts(_slug: string): BlogPost[] {
-  return [];
+interface DetailRecord extends SummaryRecord {
+  contentHtml: string;
+  tableOfContents: { id: string; text: string; level: number }[];
+}
+
+const PUBLISHED = { status: CONTENT_STATUS.PUBLISHED } as const;
+
+/** Category names by id, in display order. */
+const loadCategories = cache(async (): Promise<{ id: string; name: string }[]> => {
+  await connectToDatabase();
+  const docs = await BlogCategory.find().sort({ order: 1, name: 1 }).lean();
+  return docs.map((doc) => ({ id: String(doc._id), name: doc.name }));
+});
+
+function categoryNameOf(record: SummaryRecord, categories: { id: string; name: string }[]): string {
+  return categories.find((category) => category.id === String(record.category))?.name ?? UNCATEGORIZED;
+}
+
+function buildPost(fields: {
+  slug: string;
+  title: string;
+  excerpt: string;
+  category: string;
+  tags: readonly string[];
+  coverImage?: string | null | undefined;
+  coverImageAlt?: string | null | undefined;
+  publishedAt: string;
+  featured: boolean;
+}): BlogPost {
+  return {
+    slug: fields.slug,
+    title: fields.title,
+    excerpt: fields.excerpt,
+    category: fields.category,
+    tags: [...fields.tags],
+    ...(fields.coverImage
+      ? { coverImage: fields.coverImage, coverImageAlt: fields.coverImageAlt ?? '' }
+      : {}),
+    publishedAt: fields.publishedAt,
+    featured: fields.featured,
+  };
+}
+
+function toBlogPost(record: SummaryRecord, categories: { id: string; name: string }[]): BlogPost {
+  return buildPost({
+    slug: record.slug,
+    title: record.title,
+    excerpt: record.excerpt,
+    category: categoryNameOf(record, categories),
+    tags: record.tags,
+    coverImage: record.coverImage,
+    coverImageAlt: record.coverImageAlt,
+    publishedAt: (record.publishedAt ?? record.createdAt).toISOString(),
+    featured: record.featured,
+  });
+}
+
+function withDetail(
+  post: BlogPost,
+  contentHtml: string,
+  tableOfContents: { id: string; text: string; level: number }[],
+): BlogPostDetail {
+  return {
+    ...post,
+    // The byline is always the founder, from the one source of company facts.
+    author: { name: company.founder.name, role: company.founder.jobTitle },
+    contentHtml,
+    tableOfContents: tableOfContents.map((item) => ({
+      id: item.id,
+      text: item.text,
+      level: item.level === 3 ? 3 : 2,
+    })),
+    readingTimeMinutes: computeReadingTime(contentHtml),
+  };
+}
+
+/**
+ * The admin API's view of a post → the public template's shape. Used by the admin preview so it
+ * renders through exactly the same `BlogPostDetail` the public page receives. A post that has
+ * not been published yet has no `publishedAt`; the preview shows today's date, which is what the
+ * article would carry if published now.
+ */
+export function blogPostDetailFromAdmin(detail: BlogPostAdminDetail): BlogPostDetail {
+  const post = buildPost({
+    slug: detail.slug,
+    title: detail.title,
+    excerpt: detail.excerpt,
+    category: detail.category?.name ?? UNCATEGORIZED,
+    tags: detail.tags,
+    coverImage: detail.coverImage,
+    coverImageAlt: detail.coverImageAlt,
+    publishedAt: detail.publishedAt ?? new Date().toISOString(),
+    featured: detail.featured,
+  });
+  return withDetail(post, detail.contentHtml, detail.tableOfContents);
+}
+
+/** All published posts, newest first. */
+const loadPublishedPosts = cache(async (): Promise<BlogPost[]> => {
+  await connectToDatabase();
+  const [records, categories] = await Promise.all([
+    BlogPostModel.find(PUBLISHED)
+      .select(SUMMARY_FIELDS)
+      .sort({ publishedAt: -1, _id: -1 })
+      .lean<SummaryRecord[]>(),
+    loadCategories(),
+  ]);
+  return records.map((record) => toBlogPost(record, categories));
+});
+
+const loadPublishedPost = cache(async (slug: string): Promise<BlogPostDetail | null> => {
+  // The slug comes from the URL. Only a well-formed one can match a real post.
+  if (!SLUG_PATTERN.test(slug)) return null;
+
+  await connectToDatabase();
+  const [record, categories] = await Promise.all([
+    BlogPostModel.findOne({ ...PUBLISHED, slug })
+      .select(`${SUMMARY_FIELDS} contentHtml tableOfContents`)
+      .lean<DetailRecord | null>(),
+    loadCategories(),
+  ]);
+  if (!record) return null;
+
+  return withDetail(toBlogPost(record, categories), record.contentHtml, record.tableOfContents);
+});
+
+export async function getAllPosts(): Promise<BlogPost[]> {
+  return loadPublishedPosts();
+}
+
+/** The newest published post marked `featured`, or null. */
+export async function getFeaturedPost(): Promise<BlogPost | null> {
+  const posts = await loadPublishedPosts();
+  return posts.find((post) => post.featured) ?? null;
+}
+
+/**
+ * Category names in the admin-defined display order, limited to categories that have at least
+ * one published post — the public filter never offers a category that would show nothing.
+ */
+export async function getCategories(): Promise<string[]> {
+  const [posts, categories] = await Promise.all([loadPublishedPosts(), loadCategories()]);
+  const used = new Set(posts.map((post) => post.category));
+  return categories.map((category) => category.name).filter((name) => used.has(name));
+}
+
+/** Derived from real published posts, never hardcoded ahead of real content. */
+export async function getTags(): Promise<string[]> {
+  const posts = await loadPublishedPosts();
+  return Array.from(new Set(posts.flatMap((post) => post.tags))).sort();
+}
+
+export async function getPost(slug: string): Promise<BlogPostDetail | null> {
+  return loadPublishedPost(slug);
+}
+
+const RELATED_POSTS_LIMIT = 3;
+
+/** Published posts other than this one, ranked by shared category (weighted higher) then shared
+ * tags, newest first among ties. Posts with nothing in common are not "related". */
+export async function getRelatedPosts(slug: string): Promise<BlogPost[]> {
+  const posts = await loadPublishedPosts();
+  const current = posts.find((post) => post.slug === slug);
+  return current ? rankRelatedPosts(current, posts) : [];
+}
+
+/**
+ * Related posts for a post that may not be published yet — the admin preview passes the post it
+ * is previewing, so it shows the related articles the post WILL have once published. The post
+ * itself is never listed as related to itself.
+ */
+export async function getRelatedPostsFor(
+  current: Pick<BlogPost, 'slug' | 'category' | 'tags'>,
+): Promise<BlogPost[]> {
+  return rankRelatedPosts(current, await loadPublishedPosts());
+}
+
+function rankRelatedPosts(
+  current: Pick<BlogPost, 'slug' | 'category' | 'tags'>,
+  posts: readonly BlogPost[],
+): BlogPost[] {
+  const slug = current.slug;
+  const currentTags = new Set(current.tags);
+  return posts
+    .filter((post) => post.slug !== slug)
+    .map((post) => ({
+      post,
+      score:
+        (post.category === current.category ? 2 : 0) +
+        post.tags.filter((tag) => currentTags.has(tag)).length,
+    }))
+    .filter(({ score }) => score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, RELATED_POSTS_LIMIT)
+    .map(({ post }) => post);
 }
 
 /**
@@ -89,10 +296,10 @@ export interface BlogQueryResult {
 export const BLOG_PAGE_SIZE = 9;
 
 /**
- * Presentation-layer search/filter/pagination — pure list processing, unrelated to the
- * deferred content-source decision above. Operates on whatever `BlogPost[]` it's given, so the
- * real `/blog` page and the fixture-driven `/dev/blog-preview` page share this one
- * implementation rather than duplicating the filtering logic.
+ * Presentation-layer search/filter/pagination — pure list processing, independent of where the
+ * posts come from. Operates on whatever `BlogPost[]` it's given, so the real `/blog` page and the
+ * fixture-driven `/dev/blog-preview` page share this one implementation rather than duplicating
+ * the filtering logic.
  */
 export function filterAndPaginatePosts(
   posts: readonly BlogPost[],

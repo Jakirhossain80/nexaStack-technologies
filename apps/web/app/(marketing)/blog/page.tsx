@@ -19,13 +19,13 @@ import {
   getTags,
 } from '@/lib/blog';
 
-// Full `/blog` page, replacing the earlier minimal stub. Ships against `lib/blog.ts`'s
-// currently-empty data interface (see that file's comment — the content source is an
-// unresolved CLAUDE.md section 22 decision, not a bug here). With zero real posts, this page
-// renders only the intro and the honest empty-state message: no featured article, no search
-// box, no filter links, no pagination — those all depend on real content existing, and a
-// search box over nothing is a hollow control. The full interactive experience is verified
-// against fixture data on `/dev/blog-preview`, which reuses every component below unchanged.
+// Full `/blog` page, reading published posts from MongoDB through `lib/blog.ts`. With zero
+// published posts, this page renders only the intro and the honest empty-state message: no
+// featured article, no search box, no filter links, no pagination — those all depend on real
+// content existing, and a search box over nothing is a hollow control. The full interactive
+// experience is also verified against fixture data on `/dev/blog-preview`, which reuses every
+// component below unchanged. Rendered per request (it awaits `searchParams`), so publishing or
+// unpublishing in the admin shows here immediately.
 
 interface BlogPageProps {
   searchParams: Promise<{ q?: string; category?: string; tag?: string; page?: string }>;
@@ -39,12 +39,12 @@ export const metadata: Metadata = {
 
 export default async function BlogPage({ searchParams }: BlogPageProps) {
   const params = await searchParams;
-  const allPosts = getAllPosts();
+  const allPosts = await getAllPosts();
   const hasAnyPosts = allPosts.length > 0;
 
-  const featuredPost = hasAnyPosts ? getFeaturedPost() : null;
-  const categories = hasAnyPosts ? getCategories() : [];
-  const tags = hasAnyPosts ? getTags() : [];
+  const featuredPost = hasAnyPosts ? await getFeaturedPost() : null;
+  const categories = hasAnyPosts ? await getCategories() : [];
+  const tags = hasAnyPosts ? await getTags() : [];
   const gridSourcePosts = featuredPost
     ? allPosts.filter((post) => post.slug !== featuredPost.slug)
     : allPosts;

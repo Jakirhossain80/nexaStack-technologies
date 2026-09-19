@@ -665,8 +665,13 @@ Do not silently resolve these. Ask.
 2. **Build phasing** — recommended: phase 1 marketing site with a working contact form;
    phase 2 admin dashboard and blog; phase 3 quotation system. Confirm before scaffolding
    the admin area.
-3. **Blog content source** — MDX files, a headless CMS, or admin dashboard with a rich-text
-   editor. Unresolved and non-trivial.
+3. **Blog content source** — Resolved 2026-09-19: DB-backed markdown authored in the admin
+   dashboard (`/admin/blog`). Posts and categories live in MongoDB (`blogposts`,
+   `blogcategories`); the Express API owns writes (`/api/v1/admin/blog/*`), and the public site
+   reads published posts directly from MongoDB in `apps/web/lib/blog.ts` (no Render cold start on
+   `/blog`). The body is markdown rendered on save by an in-house escaping renderer
+   (`apps/api/src/lib/markdown.ts`): no rich-text editor and no new dependency. Cover images are
+   site paths only; upload waits on a media library.
 4. **Transactional email provider** — Resend, Postmark or Brevo.
 5. **Render hosting tier** — the free tier sleeps and adds ~30s to the first request.
    Unacceptable for a contact form. Either pay, or serve contact/quotation from Next.js

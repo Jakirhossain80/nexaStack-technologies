@@ -17,6 +17,17 @@ const EVENT_TYPES = [
   'logout',
   'password_reset_requested',
   'password_reset_completed',
+  'blog_post_created',
+  'blog_post_updated',
+  'blog_post_published',
+  'blog_post_unpublished',
+  'blog_post_archived',
+  'blog_post_restored',
+  'blog_post_deleted',
+  'blog_category_created',
+  'blog_category_updated',
+  'blog_category_reordered',
+  'blog_category_deleted',
 ] as const;
 
 const adminActivityLogSchema = new Schema(

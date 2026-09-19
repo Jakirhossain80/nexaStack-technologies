@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 
+import { AdminNav } from '@/components/admin/AdminNav';
 import { LogoutButton } from '@/components/admin/LogoutButton';
 import { getAdminSession } from '@/lib/adminSession.server';
 
@@ -15,9 +16,8 @@ export interface ProtectedAdminLayoutProps {
  * redirect after render) so a protected page's content is never sent to an unauthenticated
  * browser in the first place.
  *
- * Minimal by design (root CLAUDE.md admin auth brief, section 5): a nav placeholder and a
- * logout button only — the rest of the admin dashboard (testimonial approval, a blog CMS) is
- * explicitly out of scope for this task.
+ * Minimal by design: an identity line, a small nav (one link per admin area that has a page of
+ * its own) and a logout button. It is not a sidebar; add a link to `AdminNav` when a new area ships.
  */
 export default async function ProtectedAdminLayout({ children }: Readonly<ProtectedAdminLayoutProps>) {
   const admin = await getAdminSession();
@@ -25,11 +25,12 @@ export default async function ProtectedAdminLayout({ children }: Readonly<Protec
 
   return (
     <div className="page-container section-y">
-      <div className="flex items-center justify-between gap-4 border-b border-default pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-default pb-4">
         <div>
           <p className="text-label font-semibold text-primary">NexaStack Admin</p>
           <p className="text-label text-secondary">{admin.email}</p>
         </div>
+        <AdminNav />
         <LogoutButton />
       </div>
 
