@@ -10,12 +10,14 @@ import {
 } from '@nexastack/shared';
 import mongoose, { type Types } from 'mongoose';
 
+import { resolveCover, type CoverInput, type ResolvedCover } from '../lib/blogCover.js';
 import { ConflictError, NotFoundError, ValidationError } from '../lib/errors.js';
 import { escapeRegex, skipFor, toPaginated } from '../lib/listQuery.js';
 import { renderMarkdown } from '../lib/markdown.js';
 import { findFreeSlug, slugify } from '../lib/slug.js';
 import { BlogCategory } from '../models/BlogCategory.js';
 import { BlogPost, type BlogPostDocument } from '../models/BlogPost.js';
+import { Media } from '../models/Media.js';
 import { type AdminActionContext, logAdminAction } from './adminActivityLog.service.js';
 import { isDuplicateKeyError } from './blogCategory.service.js';
 import { applyStatusTransition } from './contentStatus.js';
@@ -59,6 +61,7 @@ function toDetail(post: LeanPost, categories: Map<string, CategoryRef>): BlogPos
     excerpt: post.excerpt,
     tags: post.tags,
     coverImage: post.coverImage ?? undefined,
+    coverMediaId: post.coverMediaId ? String(post.coverMediaId) : undefined,
     coverImageAlt: post.coverImageAlt ?? undefined,
     contentMarkdown: post.contentMarkdown,
     contentHtml: post.contentHtml,
@@ -81,6 +84,23 @@ async function requireCategory(categoryId: string): Promise<void> {
       },
     ]);
   }
+}
+
+/**
+ * The cover to store. A library image is looked up here and its URL taken from the library record
+ * (never from the request); a legacy site path passes through. See `lib/blogCover.ts` for the rules.
+ */
+async function resolveCoverForSave(input: CoverInput): Promise<ResolvedCover> {
+  const media = input.coverMediaId
+    ? await Media.findById(input.coverMediaId).select('url mediaType mimeType').lean()
+    : null;
+
+  return resolveCover(
+    input,
+    media
+      ? { id: String(media._id), url: media.url, mediaType: media.mediaType, mimeType: media.mimeType }
+      : null,
+  );
 }
 
 function slugTakenMessage(slug: string): string {
@@ -161,6 +181,7 @@ export async function createPost(
   }
 
   const { html, tableOfContents } = renderMarkdown(input.contentMarkdown);
+  const cover = await resolveCoverForSave(input);
 
   let created;
   try {
@@ -170,7 +191,8 @@ export async function createPost(
       excerpt: input.excerpt,
       category: input.categoryId,
       tags: input.tags,
-      coverImage: input.coverImage,
+      coverImage: cover.coverImage,
+      coverMediaId: cover.coverMediaId,
       coverImageAlt: input.coverImageAlt,
       contentMarkdown: input.contentMarkdown,
       contentHtml: html,
@@ -225,12 +247,14 @@ export async function updatePost(
   }
 
   const { html, tableOfContents } = renderMarkdown(input.contentMarkdown);
+  const cover = await resolveCoverForSave(input);
 
   post.title = input.title;
   post.excerpt = input.excerpt;
   post.set('category', input.categoryId);
   post.set('tags', input.tags);
-  post.set('coverImage', input.coverImage);
+  post.set('coverImage', cover.coverImage);
+  post.set('coverMediaId', cover.coverMediaId);
   post.set('coverImageAlt', input.coverImageAlt);
   post.contentMarkdown = input.contentMarkdown;
   post.contentHtml = html;
@@ -245,7 +269,11 @@ export async function updatePost(
     throw err;
   }
 
-  await logAdminAction(context, 'blog_post_updated', { postId: id, slug: post.slug });
+  await logAdminAction(context, 'blog_post_updated', {
+    postId: id,
+    slug: post.slug,
+    coverMediaId: cover.coverMediaId ?? null,
+  });
   return getPostById(id);
 }
 

@@ -26,6 +26,7 @@ const blogPostSchema = new Schema(
     category: { type: Schema.Types.ObjectId, required: true },
     tags: { type: [String], default: [] },
     coverImage: { type: String },
+    coverMediaId: { type: Schema.Types.ObjectId },
     coverImageAlt: { type: String },
     contentMarkdown: { type: String, required: true },
     contentHtml: { type: String, required: true },

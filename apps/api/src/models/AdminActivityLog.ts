@@ -40,6 +40,10 @@ const EVENT_TYPES = [
   'quotation_unarchived',
   'quotation_exported',
   'quotation_attachment_downloaded',
+  'media_uploaded',
+  'media_updated',
+  'media_replaced',
+  'media_deleted',
 ] as const;
 
 const adminActivityLogSchema = new Schema(

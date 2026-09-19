@@ -670,8 +670,11 @@ Do not silently resolve these. Ask.
    `blogcategories`); the Express API owns writes (`/api/v1/admin/blog/*`), and the public site
    reads published posts directly from MongoDB in `apps/web/lib/blog.ts` (no Render cold start on
    `/blog`). The body is markdown rendered on save by an in-house escaping renderer
-   (`apps/api/src/lib/markdown.ts`): no rich-text editor and no new dependency. Cover images are
-   site paths only; upload waits on a media library.
+   (`apps/api/src/lib/markdown.ts`): no rich-text editor and no new dependency. A post's cover
+   image is chosen from the Media Library (`/admin/media`) and stored as `coverMediaId` plus a URL
+   snapshot the API keeps in step (Replace repoints posts; Delete is refused while a post uses the
+   image); a legacy site path (`/blog/x.png`) is still accepted. Images inside post bodies are not
+   supported yet (the renderer has no image syntax).
 4. **Transactional email provider** — Resend, Postmark or Brevo.
 5. **Render hosting tier** — the free tier sleeps and adds ~30s to the first request.
    Unacceptable for a contact form. Either pay, or serve contact/quotation from Next.js

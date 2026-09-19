@@ -2,6 +2,7 @@ import { CONTENT_STATUS, SLUG_PATTERN, type BlogPostAdminDetail } from '@nexasta
 import { cache } from 'react';
 
 import { company } from '@/config/company';
+import { isLoadableCover } from '@/lib/blogImage';
 import { BlogCategory } from '@/lib/models/BlogCategory';
 import { BlogPost as BlogPostModel } from '@/lib/models/BlogPost';
 import { connectToDatabase } from '@/lib/mongodb';
@@ -87,6 +88,26 @@ function categoryNameOf(record: SummaryRecord, categories: { id: string; name: s
   return categories.find((category) => category.id === String(record.category))?.name ?? UNCATEGORIZED;
 }
 
+let warnedAboutCover = false;
+
+/**
+ * A cover the app is not configured to load (a Media Library image while `CLOUDINARY_CLOUD_NAME` is
+ * unset, say) is dropped here, for the public site and the admin preview alike, rather than being
+ * handed to `next/image`, which would throw. Logged once so the misconfiguration is discoverable.
+ */
+function loadableCover(coverImage: string | null | undefined): string | undefined {
+  if (!coverImage) return undefined;
+  if (isLoadableCover(coverImage)) return coverImage;
+  if (!warnedAboutCover) {
+    warnedAboutCover = true;
+    console.warn(
+      '[blog] A post has a cover image this app is not configured to load, so it is shown without one. ' +
+        'Set CLOUDINARY_CLOUD_NAME in the web environment (at build and run time) to the same account the Media Library uses.',
+    );
+  }
+  return undefined;
+}
+
 function buildPost(fields: {
   slug: string;
   title: string;
@@ -98,15 +119,14 @@ function buildPost(fields: {
   publishedAt: string;
   featured: boolean;
 }): BlogPost {
+  const coverImage = loadableCover(fields.coverImage);
   return {
     slug: fields.slug,
     title: fields.title,
     excerpt: fields.excerpt,
     category: fields.category,
     tags: [...fields.tags],
-    ...(fields.coverImage
-      ? { coverImage: fields.coverImage, coverImageAlt: fields.coverImageAlt ?? '' }
-      : {}),
+    ...(coverImage ? { coverImage, coverImageAlt: fields.coverImageAlt ?? '' } : {}),
     publishedAt: fields.publishedAt,
     featured: fields.featured,
   };

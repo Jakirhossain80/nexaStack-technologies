@@ -43,7 +43,12 @@ const blogPostSchema = new Schema(
       default: [],
       validate: (v: string[]) => v.length <= 8,
     },
+    // What the site shows: a Media Library URL (set from the library record whenever `coverMediaId`
+    // is set, and kept in step when that item's file is replaced) or a legacy site path.
     coverImage: { type: String, trim: true, maxlength: 200 },
+    // A real reference to the Media Library item chosen as the cover. This is what lets the library
+    // refuse to delete an image a post is using, and repoint posts when its file is replaced.
+    coverMediaId: { type: Schema.Types.ObjectId, ref: 'Media' },
     coverImageAlt: { type: String, trim: true, maxlength: 200 },
     contentMarkdown: { type: String, required: true, maxlength: 50_000 },
     contentHtml: { type: String, required: true },
@@ -62,6 +67,8 @@ const blogPostSchema = new Schema(
 blogPostSchema.index({ status: 1, publishedAt: -1 });
 blogPostSchema.index({ category: 1, status: 1 });
 blogPostSchema.index({ updatedAt: -1 });
+// Looked up on every Media Library delete and replace. Sparse: most posts have no library cover.
+blogPostSchema.index({ coverMediaId: 1 }, { sparse: true });
 
 export type BlogPostDocument = InferSchemaType<typeof blogPostSchema>;
 

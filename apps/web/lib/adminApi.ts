@@ -24,3 +24,22 @@ export async function adminApiFetch(path: string, init: RequestInit = {}): Promi
     },
   });
 }
+
+/**
+ * The same, for a `FormData` body (a file upload). It deliberately sets NO `Content-Type`: the
+ * browser must add `multipart/form-data` itself, with the boundary that separates the parts. Forcing
+ * `application/json` (as `adminApiFetch` does) would make the API reject the upload. Credentials and
+ * the CSRF header are identical.
+ */
+export async function adminApiFormFetch(
+  path: string,
+  method: 'POST' | 'PATCH',
+  body: FormData,
+): Promise<Response> {
+  return fetch(`${env.NEXT_PUBLIC_API_URL}${path}`, {
+    method,
+    body,
+    credentials: 'include',
+    headers: { [CSRF_HEADER_NAME]: CSRF_HEADER_VALUE },
+  });
+}

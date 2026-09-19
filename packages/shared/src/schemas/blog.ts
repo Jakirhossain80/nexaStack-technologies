@@ -30,8 +30,10 @@ const tagSchema = z
   });
 
 /**
- * Cover images are site-relative paths only (for example `/blog/first-post.png`) until a media
- * library exists. Rejects `//host/…` (protocol-relative) and any scheme, so the value can never
+ * A cover image comes from the Media Library (`coverMediaId`: the API then sets `coverImage` from the
+ * library record, never from the client), or, for older posts and images kept in the site's own
+ * `public/` folder, is a site-relative PATH (for example `/blog/first-post.png`). This pattern is that
+ * legacy path form. It rejects `//host/…` (protocol-relative) and any scheme, so the value can never
  * point off-site or carry `javascript:`.
  */
 const COVER_IMAGE_PATTERN = /^\/(?!\/)[A-Za-z0-9/_\-.]+\.(?:png|jpe?g|webp|avif|gif|svg)$/i;
@@ -85,6 +87,9 @@ export const blogPostFormSchema = z
         })
         .optional(),
     ),
+    // A Media Library item. Blank means "no library image". The API loads the record and sets the
+    // stored `coverImage` from it, so a form never supplies (or spoofs) the URL of a library image.
+    coverMediaId: z.preprocess(emptyToUndefined, objectIdSchema.optional()),
     coverImageAlt: z.preprocess(
       emptyToUndefined,
       z
@@ -102,7 +107,11 @@ export const blogPostFormSchema = z
       }),
     featured: z.boolean({ error: 'Featured must be on or off' }),
   })
-  .refine((post) => !post.coverImage || Boolean(post.coverImageAlt), {
+  .refine((post) => !(post.coverImage && post.coverMediaId), {
+    error: 'Choose either a Media Library image or a site image path, not both',
+    path: ['coverMediaId'],
+  })
+  .refine((post) => !(post.coverImage || post.coverMediaId) || Boolean(post.coverImageAlt), {
     error: 'Please describe the cover image: alt text is required when a cover image is set',
     path: ['coverImageAlt'],
   });

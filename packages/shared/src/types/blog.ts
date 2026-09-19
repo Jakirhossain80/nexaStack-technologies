@@ -48,7 +48,10 @@ export interface BlogPostAdminSummary {
 export interface BlogPostAdminDetail extends BlogPostAdminSummary {
   excerpt: string;
   tags: string[];
+  /** The address shown on the site: a Media Library URL (kept in step by the API) or a legacy site path. */
   coverImage: string | undefined;
+  /** Set when the cover was chosen from the Media Library; undefined for a site path or no cover. */
+  coverMediaId: string | undefined;
   coverImageAlt: string | undefined;
   contentMarkdown: string;
   contentHtml: string;

@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { adminRouter } from './admin.routes.js';
 import { adminBlogRouter } from './adminBlog.routes.js';
 import { adminEnquiriesRouter } from './adminEnquiries.routes.js';
+import { adminMediaRouter } from './adminMedia.routes.js';
 import { adminQuotationsRouter } from './adminQuotations.routes.js';
 import { authRouter } from './auth.routes.js';
 import { contactRouter } from './contact.routes.js';
@@ -20,6 +21,9 @@ v1Router.use('/admin/enquiries', adminEnquiriesRouter);
 // Quotation management: same reasoning. It replaces the minimal quotation routes that used to live
 // in `adminRouter`.
 v1Router.use('/admin/quotations', adminQuotationsRouter);
+// Media Library: same reasoning, and its upload routes carry multipart bodies the general router's
+// JSON-only handling was never meant for.
+v1Router.use('/admin/media', adminMediaRouter);
 v1Router.use('/admin', adminRouter);
 
 export const router = Router();

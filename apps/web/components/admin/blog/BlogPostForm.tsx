@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Controller, useForm, useWatch, type Resolver } from 'react-hook-form';
 
+import { BlogCoverField, type CoverMode } from '@/components/admin/blog/BlogCoverField';
 import { ConfirmDeleteButton } from '@/components/admin/content/ConfirmDeleteButton';
 import { FormField } from '@/components/admin/content/FormField';
 import { StatusActionBar } from '@/components/admin/content/StatusActionBar';
@@ -23,6 +24,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { adminRequest } from '@/lib/adminRequest';
+import type { PickerItem } from '@/lib/mediaActions';
 
 export interface BlogPostFormProps {
   categories: readonly BlogCategoryAdmin[];
@@ -37,6 +39,7 @@ interface PostFormFields {
   categoryId: string;
   tags: string[];
   coverImage: string;
+  coverMediaId: string;
   coverImageAlt: string;
   contentMarkdown: string;
   featured: boolean;
@@ -49,6 +52,7 @@ const FIELD_NAMES: readonly string[] = [
   'categoryId',
   'tags',
   'coverImage',
+  'coverMediaId',
   'coverImageAlt',
   'contentMarkdown',
   'featured',
@@ -64,7 +68,10 @@ function toFields(post: BlogPostAdminDetail | undefined): PostFormFields {
     excerpt: post?.excerpt ?? '',
     categoryId: post?.category?.id ?? '',
     tags: post?.tags ?? [],
-    coverImage: post?.coverImage ?? '',
+    // For a library cover, `coverImage` on the post is the library URL, which the API sets itself: the
+    // form holds it only in `coverMediaId` (sending both is rejected). It is a typed path otherwise.
+    coverImage: post?.coverMediaId ? '' : (post?.coverImage ?? ''),
+    coverMediaId: post?.coverMediaId ?? '',
     coverImageAlt: post?.coverImageAlt ?? '',
     contentMarkdown: post?.contentMarkdown ?? '',
     featured: post?.featured ?? false,
@@ -91,6 +98,13 @@ export function BlogPostForm({ categories, post }: BlogPostFormProps) {
   const [serverError, setServerError] = useState<string | null>(null);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const [tagsText, setTagsText] = useState((post?.tags ?? []).join(', '));
+  // What to show for a library cover: an image just picked (with its file name), or, for a post saved
+  // earlier, the URL the API stored (the file name is not part of the post).
+  const [coverPreview, setCoverPreview] = useState<{ url: string; name?: string } | null>(
+    post?.coverMediaId && post.coverImage ? { url: post.coverImage } : null,
+  );
+  // "Use a site image path instead" was chosen (or the post already has one).
+  const [pathMode, setPathMode] = useState(Boolean(post?.coverImage && !post.coverMediaId));
 
   const isEditing = post !== undefined;
   const isArchived = post?.status === CONTENT_STATUS.ARCHIVED;
@@ -102,6 +116,8 @@ export function BlogPostForm({ categories, post }: BlogPostFormProps) {
     handleSubmit,
     reset,
     setError,
+    setValue,
+    clearErrors,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<PostFormFields, unknown, BlogPostInput>({
     resolver: zodResolver(blogPostFormSchema) as unknown as Resolver<
@@ -114,6 +130,42 @@ export function BlogPostForm({ categories, post }: BlogPostFormProps) {
 
   // `useWatch`, not `watch()`: the latter cannot be memoized by the React Compiler.
   const excerptLength = useWatch({ control, name: 'excerpt' }).length;
+  const [coverMediaId, coverImage, coverImageAlt] = useWatch({
+    control,
+    name: ['coverMediaId', 'coverImage', 'coverImageAlt'],
+  });
+
+  const coverMode: CoverMode = coverMediaId ? 'library' : pathMode || coverImage ? 'path' : 'none';
+
+  // Editing the cover marks the form dirty (so the status actions lock until it is saved) and clears any
+  // stale cover errors.
+  const coverChange = { shouldDirty: true, shouldTouch: true } as const;
+
+  function pickCover(item: PickerItem) {
+    setValue('coverMediaId', item.id, coverChange);
+    setValue('coverImage', '', coverChange);
+    // The image's alt text is the starting point for this post's; it can then differ per use.
+    setValue('coverImageAlt', item.altText ?? '', coverChange);
+    clearErrors(['coverMediaId', 'coverImage', 'coverImageAlt']);
+    setCoverPreview({ url: item.url, name: item.filename });
+    setPathMode(false);
+  }
+
+  function removeCover() {
+    setValue('coverMediaId', '', coverChange);
+    setValue('coverImage', '', coverChange);
+    setValue('coverImageAlt', '', coverChange);
+    clearErrors(['coverMediaId', 'coverImage', 'coverImageAlt']);
+    setCoverPreview(null);
+    setPathMode(false);
+  }
+
+  function useSitePath() {
+    setValue('coverMediaId', '', coverChange);
+    clearErrors(['coverMediaId']);
+    setCoverPreview(null);
+    setPathMode(true);
+  }
 
   const onSubmit = handleSubmit(async (data) => {
     setServerError(null);
@@ -387,33 +439,55 @@ export function BlogPostForm({ categories, post }: BlogPostFormProps) {
               />
             </FormField>
 
-            <FormField
-              id="coverImage"
-              label="Cover image path"
-              hint="A site image path such as /blog/my-post.png. Uploading images comes later."
-              error={errors.coverImage?.message}
-            >
-              <Input
-                id="coverImage"
-                invalid={Boolean(errors.coverImage)}
-                aria-describedby="coverImage-hint coverImage-error"
-                {...register('coverImage')}
-              />
-            </FormField>
+            <BlogCoverField
+              mode={coverMode}
+              mediaId={coverMediaId}
+              previewUrl={coverPreview?.url}
+              previewAlt={coverImageAlt}
+              previewName={coverPreview?.name}
+              error={errors.coverMediaId?.message}
+              onPick={pickCover}
+              onRemove={removeCover}
+              onUsePath={useSitePath}
+            />
 
-            <FormField
-              id="coverImageAlt"
-              label="Cover image alt text"
-              hint="Required when there is a cover image. Describe what it shows."
-              error={errors.coverImageAlt?.message}
-            >
-              <Input
+            {coverMode === 'path' && (
+              <FormField
+                id="coverImage"
+                label="Site image path"
+                hint="For an image kept in this site's own public folder, such as /blog/my-post.png. Images from the Media Library are the better choice."
+                error={errors.coverImage?.message}
+              >
+                <Input
+                  id="coverImage"
+                  invalid={Boolean(errors.coverImage)}
+                  aria-describedby="coverImage-hint coverImage-error"
+                  {...register('coverImage')}
+                />
+              </FormField>
+            )}
+
+            {(coverMode === 'library' || (coverMode === 'path' && coverImage)) && (
+              <FormField
                 id="coverImageAlt"
-                invalid={Boolean(errors.coverImageAlt)}
-                aria-describedby="coverImageAlt-hint coverImageAlt-error"
-                {...register('coverImageAlt')}
-              />
-            </FormField>
+                label="Cover image alt text"
+                required
+                hint={
+                  coverMode === 'library'
+                    ? 'Filled in from the library image. Edit it if this post needs different wording.'
+                    : 'Describe what the image shows, for people who cannot see it.'
+                }
+                error={errors.coverImageAlt?.message}
+              >
+                <Input
+                  id="coverImageAlt"
+                  invalid={Boolean(errors.coverImageAlt)}
+                  aria-required="true"
+                  aria-describedby="coverImageAlt-hint coverImageAlt-error"
+                  {...register('coverImageAlt')}
+                />
+              </FormField>
+            )}
 
             <label className="flex min-h-11 items-start gap-3 text-body text-primary">
               <Checkbox {...register('featured')} />

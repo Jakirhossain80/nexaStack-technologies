@@ -36,6 +36,10 @@ const EVENT_LABELS: Record<string, string> = {
   quotation_unarchived: 'Quotation restored from archive',
   quotation_exported: 'Quotations exported to CSV',
   quotation_attachment_downloaded: 'Quotation attachment downloaded',
+  media_uploaded: 'Media file uploaded',
+  media_updated: 'Media alt text or description edited',
+  media_replaced: 'Media file replaced',
+  media_deleted: 'Media file deleted',
 };
 
 function formatTimestamp(iso: string): string {

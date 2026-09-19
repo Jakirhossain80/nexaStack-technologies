@@ -50,6 +50,13 @@ export {
   quotationStep4Schema,
 } from './schemas/quotation.js';
 export {
+  mediaAltTextSchema,
+  mediaDeleteSchema,
+  mediaDescriptionSchema,
+  mediaDocumentMetadataSchema,
+  mediaImageMetadataSchema,
+} from './schemas/media.js';
+export {
   QUOTATION_NOTE_MAX,
   QUOTATION_NOTES_MAX,
   quotationNoteSchema,
@@ -96,6 +103,7 @@ export type {
   QuotationStep3Input,
   QuotationStep4Input,
 } from './types/quotation.js';
+export type { MediaAdmin, MediaDeleteInput, MediaUsageAdmin } from './types/media.js';
 export type {
   QuotationAdminDetail,
   QuotationAdminSummary,
@@ -133,6 +141,33 @@ export {
   getAvailableEnquiryTransitions,
   type EnquiryStatus,
 } from './constants/enquiryStatus.js';
+export {
+  MEDIA_ACCEPT_ATTRIBUTE,
+  MEDIA_ACCEPTED_EXTENSIONS,
+  MEDIA_ACCEPTED_MIME_TYPES,
+  MEDIA_ALLOWED_TYPES_TEXT,
+  MEDIA_ALT_TEXT_MAX,
+  MEDIA_ALT_TEXT_MIN,
+  MEDIA_DESCRIPTION_MAX,
+  MEDIA_DOCUMENT_MIME_TYPES,
+  MEDIA_FILENAME_MAX,
+  MEDIA_IMAGE_MIME_TYPES,
+  MEDIA_MAX_DIMENSION,
+  MEDIA_MAX_UPLOAD_BYTES,
+  MEDIA_PAGE_SIZE,
+  MEDIA_PDF_MAX_BYTES,
+  MEDIA_RASTER_MAX_BYTES,
+  MEDIA_SVG_MAX_BYTES,
+  MEDIA_TYPE,
+  MEDIA_TYPES,
+  maxBytesForMime,
+  mediaTypeForMime,
+  mediaTypeSchema,
+  type MediaDocumentMimeType,
+  type MediaImageMimeType,
+  type MediaMimeType,
+  type MediaType,
+} from './constants/media.js';
 export {
   QUOTATION_ATTENTION_STATUSES,
   QUOTATION_STATUS,
