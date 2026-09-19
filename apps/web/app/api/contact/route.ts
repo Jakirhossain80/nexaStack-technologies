@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { connectToDatabase } from '@/lib/mongodb';
 import { ContactSubmission } from '@/lib/models/ContactSubmission';
+import { notifyContactSubmission } from '@/lib/notifications';
 import { checkContactRateLimit, getClientIp } from '@/lib/rateLimit';
 import { verifyTurnstileToken } from '@/lib/turnstile';
 
@@ -78,9 +79,10 @@ export async function POST(request: Request): Promise<NextResponse<ApiResponse<u
     );
   }
 
+  let created: { id: string; subject: string };
   try {
     await connectToDatabase();
-    await ContactSubmission.create(parsed.data);
+    created = await ContactSubmission.create(parsed.data);
   } catch (err) {
     console.error('[contact] Failed to persist submission', err);
     return jsonError(
@@ -90,12 +92,9 @@ export async function POST(request: Request): Promise<NextResponse<ApiResponse<u
     );
   }
 
-  // TODO(CLAUDE.md section 22 item 4): send a notification email to the firm and a confirmation
-  // to the sender once a transactional provider (Resend / Postmark / Brevo) is chosen. The
-  // persistence above must succeed first — a failed email must never lose the enquiry.
-  if (process.env.RESEND_API_KEY) {
-    // Deferred: no provider is configured yet, so nothing is sent even if this var appears.
-  }
+  // Deferred email hook, in one shared place (lib/notifications.ts). The persistence above must
+  // succeed first, and the hook never throws, so a failed notification can never lose the enquiry.
+  notifyContactSubmission({ id: created.id, subject: created.subject });
 
   return jsonSuccess({ received: true }, 201);
 }

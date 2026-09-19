@@ -1,3 +1,6 @@
+import { ENQUIRY_STATUS } from '@nexastack/shared';
+import mongoose from 'mongoose';
+
 import { ContactSubmission } from '../models/ContactSubmission.js';
 import { QuotationSubmission } from '../models/QuotationSubmission.js';
 
@@ -15,7 +18,14 @@ export interface DashboardStats {
 export async function getDashboardStats(): Promise<DashboardStats> {
   const [contactTotal, contactNew, quotationTotal, quotationNew] = await Promise.all([
     ContactSubmission.countDocuments(),
-    ContactSubmission.countDocuments({ status: 'new' }),
+    // "New" = never opened AND still in the active view. `archived: { $ne: true }` (not
+    // `false`) so a legacy row without the field still counts. Enquiries with the richer
+    // 4-state model: opened-but-not-followed-up ones ("read") are surfaced by the attention
+    // list, not by this "new" count. `trusted`: `sanitizeFilter` would wrap a bare `$ne`.
+    ContactSubmission.countDocuments({
+      status: ENQUIRY_STATUS.NEW,
+      archived: mongoose.trusted({ $ne: true }),
+    }),
     QuotationSubmission.countDocuments(),
     QuotationSubmission.countDocuments({ status: 'new' }),
   ]);

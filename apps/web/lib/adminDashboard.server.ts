@@ -60,13 +60,6 @@ export interface EnquirySummary {
   createdAt: string;
 }
 
-export interface EnquiryDetail extends EnquirySummary {
-  phone?: string;
-  companyName?: string;
-  message: string;
-  preferredContactMethod: string;
-}
-
 export interface SubmissionListParams {
   status?: 'new' | 'responded';
   limit?: number;
@@ -80,16 +73,17 @@ function listQueryString(params: SubmissionListParams): string {
   return query ? `?${query}` : '';
 }
 
-export async function getEnquiries(params: SubmissionListParams = {}): Promise<EnquirySummary[]> {
-  const data = await forwardedGet<{ enquiries: EnquirySummary[] }>(
-    `/api/v1/admin/enquiries${listQueryString(params)}`,
+/**
+ * The newest Contact enquiries that still need attention: NOT archived and status `new` or
+ * `read` (opened, but no follow-up recorded yet). `contacted` and `closed` are done, and an
+ * archived enquiry has been put away. The enquiry list endpoint takes a comma list for `status`
+ * and returns a paginated `{ items }` (Enquiry Management), read here.
+ */
+export async function getEnquiriesNeedingAttention(limit: number): Promise<EnquirySummary[]> {
+  const data = await forwardedGet<{ items: EnquirySummary[] }>(
+    `/api/v1/admin/enquiries?status=new,read&limit=${limit}`,
   );
-  return data?.enquiries ?? [];
-}
-
-export async function getEnquiryById(id: string): Promise<EnquiryDetail | null> {
-  const data = await forwardedGet<{ enquiry: EnquiryDetail }>(`/api/v1/admin/enquiries/${id}`);
-  return data?.enquiry ?? null;
+  return data?.items ?? [];
 }
 
 export interface QuotationSummary {

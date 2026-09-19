@@ -16,6 +16,12 @@ export {
   blogPostListQuerySchema,
 } from './schemas/blog.js';
 export {
+  ENQUIRY_NOTE_MAX,
+  ENQUIRY_NOTES_MAX,
+  enquiryNoteSchema,
+  enquiryStatusChangeSchema,
+} from './schemas/enquiry.js';
+export {
   OBJECT_ID_PATTERN,
   SLUG_PATTERN,
   contentListQuerySchema,
@@ -58,6 +64,13 @@ export type {
   BlogTocItem,
 } from './types/blog.js';
 export type {
+  EnquiryAdminDetail,
+  EnquiryAdminSummary,
+  EnquiryNoteAdmin,
+  EnquiryNoteInput,
+  EnquiryStatusChangeInput,
+} from './types/enquiry.js';
+export type {
   ContentListQuery,
   ContentStatusTransitionInput,
   Paginated,
@@ -96,5 +109,15 @@ export {
   getAvailableTransitions,
   type ContentStatus,
 } from './constants/contentStatus.js';
+export {
+  ENQUIRY_ATTENTION_STATUSES,
+  ENQUIRY_STATUS,
+  ENQUIRY_STATUS_TRANSITIONS,
+  ENQUIRY_STATUSES,
+  canTransitionEnquiry,
+  enquiryStatusSchema,
+  getAvailableEnquiryTransitions,
+  type EnquiryStatus,
+} from './constants/enquiryStatus.js';
 export { ERROR_CODES, type ErrorCode } from './constants/errorCodes.js';
 export { COUNTRIES } from './constants/countries.js';

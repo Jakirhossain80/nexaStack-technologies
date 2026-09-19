@@ -28,7 +28,9 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
       <select
         ref={ref}
         aria-invalid={invalid || undefined}
-        defaultValue={defaultValue ?? ''}
+        // Uncontrolled by default (react-hook-form's `register`). A caller that passes `value`
+        // controls it, and must not also get a `defaultValue` (React warns about both).
+        defaultValue={props.value === undefined ? (defaultValue ?? '') : undefined}
         className={cn(
           'min-h-11 w-full appearance-none rounded-field border bg-surface px-3.5 pr-10 text-body text-primary focus-ring',
           invalid ? 'border-error' : 'border-strong',

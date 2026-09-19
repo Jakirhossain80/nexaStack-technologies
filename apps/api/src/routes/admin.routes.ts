@@ -13,8 +13,8 @@ import {
 } from '../schemas/adminSubmissions.js';
 
 /**
- * Dashboard-supporting endpoints for the admin landing page and its two minimal companion
- * views (enquiries, quotations). Every route requires a valid session *and* one of the two
+ * Dashboard-supporting endpoints for the admin landing page and the minimal quotations view
+ * (Contact enquiries have their own router, adminEnquiries.routes.ts). Every route requires a valid session *and* one of the two
  * roles the RBAC table in apps/api/CLAUDE.md section 5 scopes enquiries/quotations/media to
  * ('super_admin', 'admin') — not 'content_editor', which is blog/portfolio content only.
  * No rate limiter: these are session-gated admin reads/writes, not public or auth-specific
@@ -57,52 +57,7 @@ adminRouter.get(
   dashboardController.getRecentActivity,
 );
 
-/**
- * @openapi
- * /api/v1/admin/enquiries:
- *   get:
- *     summary: List Contact submissions
- *     description: >
- *       Optional ?status=new|responded and ?limit= (default 50). Reused by both the
- *       dashboard's "content requiring attention" section and the quick-action links —
- *       no separate endpoint for either.
- *     tags: [Admin]
- *     responses:
- *       200: { description: Enquiry summaries. }
- */
-adminRouter.get(
-  '/enquiries',
-  validate({ query: submissionListQuerySchema }),
-  submissionsController.listEnquiries,
-);
-
-/**
- * @openapi
- * /api/v1/admin/enquiries/{id}:
- *   get:
- *     summary: Contact submission detail
- *     tags: [Admin]
- *     responses:
- *       200: { description: Full enquiry content. }
- *       404: { description: Not found (NOT_FOUND). }
- *   patch:
- *     summary: Update a Contact submission's status
- *     description: Status only — new to responded (or back). Not a general edit endpoint.
- *     tags: [Admin]
- *     responses:
- *       200: { description: Status updated. }
- *       404: { description: Not found (NOT_FOUND). }
- */
-adminRouter.get(
-  '/enquiries/:id',
-  validate({ params: mongoIdParamSchema }),
-  submissionsController.getEnquiry,
-);
-adminRouter.patch(
-  '/enquiries/:id',
-  validate({ params: mongoIdParamSchema, body: updateSubmissionStatusSchema }),
-  submissionsController.updateEnquiryStatus,
-);
+// Contact enquiries moved to their own router: routes/adminEnquiries.routes.ts.
 
 /**
  * @openapi

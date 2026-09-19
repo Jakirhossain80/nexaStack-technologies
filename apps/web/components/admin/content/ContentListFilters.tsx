@@ -18,13 +18,15 @@ export interface ContentFilter {
 export interface ContentListFiltersProps {
   searchLabel: string;
   searchPlaceholder: string;
-  /** Extra filters beyond status (for blog: category). */
+  /** Replaces the default (content-status) status filter, for types with their own statuses. */
+  statusFilter?: ContentFilter;
+  /** Extra filters beyond status (blog: category; enquiries: active/archived view). */
   extraFilters?: readonly ContentFilter[];
 }
 
 const DEBOUNCE_MS = 300;
 
-const STATUS_FILTER: ContentFilter = {
+const DEFAULT_STATUS_FILTER: ContentFilter = {
   paramName: 'status',
   label: 'Status',
   allLabel: 'All active (hides archived)',
@@ -45,6 +47,7 @@ const LABEL_CLASSES = 'text-label font-medium text-primary';
 export function ContentListFilters({
   searchLabel,
   searchPlaceholder,
+  statusFilter = DEFAULT_STATUS_FILTER,
   extraFilters = [],
 }: ContentListFiltersProps) {
   const router = useRouter();
@@ -56,7 +59,10 @@ export function ContentListFilters({
   useEffect(() => () => clearTimeout(debounceRef.current), []);
 
   function navigate(mutate: (params: URLSearchParams) => void) {
-    const params = new URLSearchParams(searchParams.toString());
+    // Read the LIVE URL, not the `searchParams` captured when this handler was created. The search
+    // box navigates after a debounce; if a filter was changed in that window, the captured params
+    // are stale and rebuilding the URL from them would silently undo the newer change.
+    const params = new URLSearchParams(window.location.search);
     mutate(params);
     params.delete('page');
     const next = params.toString();
@@ -74,14 +80,33 @@ export function ContentListFilters({
     }, DEBOUNCE_MS);
   }
 
+  // The selects are CONTROLLED, and never remounted. (They used to be uncontrolled and keyed on the
+  // URL value, which remounted the element on every change and dropped keyboard focus: a keyboard
+  // user could not even step through the options with the arrow keys.) A pick shows immediately;
+  // once the URL has caught up (`paramsString` differs from the URL the pick was made against) the
+  // URL is the single source of truth again, so the back button and a cleared filter still work.
+  const paramsString = searchParams.toString();
+  const [picked, setPicked] = useState<{ base: string; values: Record<string, string> }>({
+    base: '',
+    values: {},
+  });
+  const valueOf = (paramName: string): string =>
+    picked.base === paramsString && paramName in picked.values
+      ? (picked.values[paramName] ?? '')
+      : (searchParams.get(paramName) ?? '');
+
   function onFilterChange(paramName: string, value: string) {
+    setPicked({
+      base: paramsString,
+      values: { ...(picked.base === paramsString ? picked.values : {}), [paramName]: value },
+    });
     navigate((params) => {
       if (value) params.set(paramName, value);
       else params.delete(paramName);
     });
   }
 
-  const filters = [STATUS_FILTER, ...extraFilters];
+  const filters = [statusFilter, ...extraFilters];
 
   return (
     <form
@@ -105,19 +130,15 @@ export function ContentListFilters({
       </div>
 
       {filters.map((filter) => {
-        const current = searchParams.get(filter.paramName) ?? '';
         const id = `content-filter-${filter.paramName}`;
         return (
           <div key={filter.paramName} className="flex flex-col gap-2">
             <label htmlFor={id} className={LABEL_CLASSES}>
               {filter.label}
             </label>
-            {/* Keyed on the URL value: the select is uncontrolled, so a change made elsewhere
-                (back button, a cleared filter) remounts it with the right selection. */}
             <Select
-              key={current}
               id={id}
-              defaultValue={current}
+              value={valueOf(filter.paramName)}
               onChange={(event) => onFilterChange(filter.paramName, event.target.value)}
               options={[{ value: '', label: filter.allLabel }, ...filter.options]}
             />

@@ -9,24 +9,7 @@ import {
 } from '../schemas/adminSubmissions.js';
 import * as submissions from '../services/adminSubmissions.service.js';
 
-export async function listEnquiries(_req: Request, res: Response): Promise<void> {
-  const query = validatedQuery(res, submissionListQuerySchema);
-  const enquiries = await submissions.listContactSubmissions(query);
-  sendSuccess(res, { enquiries }, 200);
-}
-
-export async function getEnquiry(_req: Request, res: Response): Promise<void> {
-  const { id } = validatedParams(res, mongoIdParamSchema);
-  const enquiry = await submissions.getContactSubmissionById(id);
-  sendSuccess(res, { enquiry }, 200);
-}
-
-export async function updateEnquiryStatus(_req: Request, res: Response): Promise<void> {
-  const { id } = validatedParams(res, mongoIdParamSchema);
-  const { status } = validatedBody(res, updateSubmissionStatusSchema);
-  await submissions.updateContactSubmissionStatus(id, status);
-  sendSuccess(res, { updated: true }, 200);
-}
+// Contact enquiries are handled by adminEnquiries.controller.ts.
 
 export async function listQuotations(_req: Request, res: Response): Promise<void> {
   const query = validatedQuery(res, submissionListQuerySchema);

@@ -1,48 +1,18 @@
 import type {
-  ApiResponse,
   BlogCategoryAdmin,
   BlogPostAdminDetail,
   BlogPostAdminSummary,
   ContentStatus,
   Paginated,
 } from '@nexastack/shared';
-import { headers } from 'next/headers';
 
-import { env } from '@/lib/env';
+import { forwardedRead, type AdminReadResult } from '@/lib/adminForward.server';
 
-/**
- * Server-side reads of the blog admin API (`/api/v1/admin/blog/*`) for the admin pages. Same
- * forwarded-cookie pattern as `adminDashboard.server.ts`, but with a richer result: the blog
- * pages must tell a genuine 404 (render `notFound()`) apart from "the API is down" or "your role
- * cannot see this", which `adminDashboard.server.ts`'s null-on-anything helper cannot express.
- */
+/** Server-side reads of the blog admin API (`/api/v1/admin/blog/*`) for the admin pages. */
 
-export type AdminReadResult<T> =
-  { ok: true; data: T } | { ok: false; status: number | null; message: string };
+export type { AdminReadResult };
 
 const BLOG_API = '/api/v1/admin/blog';
-
-async function forwardedRead<T>(path: string): Promise<AdminReadResult<T>> {
-  const incoming = await headers();
-  const cookie = incoming.get('cookie');
-  if (!cookie) return { ok: false, status: 401, message: 'You are not signed in.' };
-
-  try {
-    const response = await fetch(`${env.NEXT_PUBLIC_API_URL}${path}`, {
-      headers: { cookie },
-      cache: 'no-store',
-    });
-    const body = (await response.json()) as ApiResponse<T>;
-    if (body.success) return { ok: true, data: body.data };
-    return { ok: false, status: response.status, message: body.error.message };
-  } catch {
-    return {
-      ok: false,
-      status: null,
-      message: 'The admin API could not be reached. Check that it is running and try again.',
-    };
-  }
-}
 
 export interface BlogPostListParams {
   q?: string | undefined;

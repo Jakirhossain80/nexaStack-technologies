@@ -6,7 +6,7 @@ import { StatCard } from '@/components/admin/StatCard';
 import { Button } from '@/components/ui/Button';
 import {
   getDashboardStats,
-  getEnquiries,
+  getEnquiriesNeedingAttention,
   getQuotations,
   getRecentActivity,
 } from '@/lib/adminDashboard.server';
@@ -41,7 +41,7 @@ export default async function AdminDashboardPage() {
   // Dynamic, MongoDB-backed content — fetched from apps/api.
   const [stats, newEnquiries, newQuotations, activity] = await Promise.all([
     getDashboardStats(),
-    getEnquiries({ status: 'new', limit: ATTENTION_LIMIT }),
+    getEnquiriesNeedingAttention(ATTENTION_LIMIT),
     getQuotations({ status: 'new', limit: ATTENTION_LIMIT }),
     getRecentActivity(ACTIVITY_LIMIT),
   ]);

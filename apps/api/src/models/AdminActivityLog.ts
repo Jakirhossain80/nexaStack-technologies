@@ -28,6 +28,12 @@ const EVENT_TYPES = [
   'blog_category_updated',
   'blog_category_reordered',
   'blog_category_deleted',
+  'enquiry_marked_read',
+  'enquiry_status_changed',
+  'enquiry_note_added',
+  'enquiry_archived',
+  'enquiry_unarchived',
+  'enquiry_exported',
 ] as const;
 
 const adminActivityLogSchema = new Schema(

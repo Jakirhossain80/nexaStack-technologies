@@ -9,6 +9,8 @@ export interface ContentEditorHeaderProps {
   title: string;
   /** Omit for a new, unsaved item. */
   status?: ContentStatus;
+  /** Extra badges after the title, for a type with its own status (enquiries pass theirs here). */
+  badges?: ReactNode;
   backHref: string;
   backLabel: string;
   /** Extra text under the title, for example the last-updated time. */
@@ -22,6 +24,7 @@ export interface ContentEditorHeaderProps {
 export function ContentEditorHeader({
   title,
   status,
+  badges,
   backHref,
   backLabel,
   description,
@@ -38,6 +41,7 @@ export function ContentEditorHeader({
       <div className="mt-2 flex flex-wrap items-center gap-3">
         <h1 className="text-page font-semibold tracking-tight text-primary">{title}</h1>
         {status && <StatusBadge status={status} />}
+        {badges}
       </div>
       {description && <p className="mt-2 text-body text-secondary">{description}</p>}
     </header>

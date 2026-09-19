@@ -1,10 +1,20 @@
+import { ENQUIRY_STATUS, ENQUIRY_STATUSES } from '@nexastack/shared';
 import { Schema, model, models, type InferSchemaType } from 'mongoose';
 
 /**
  * A validated `/contact` page submission. Fields mirror `contactFormSchema` from
  * `@nexastack/shared` exactly — Zod is the security boundary (validated before this document
  * is constructed); these constraints are the second layer required by root CLAUDE.md 11.5.
+ *
+ * This is the canonical schema for CREATING a submission. `apps/api/src/models/ContactSubmission.ts`
+ * mirrors it for the admin Enquiry Management endpoints; keep the two in step.
  */
+const noteSchema = new Schema({
+  authorAdminId: { type: Schema.Types.ObjectId, required: true },
+  text: { type: String, required: true, trim: true, maxlength: 2000 },
+  createdAt: { type: Date, required: true, default: Date.now },
+});
+
 const contactSubmissionSchema = new Schema(
   {
     fullName: { type: String, required: true, trim: true, maxlength: 120 },
@@ -19,15 +29,22 @@ const contactSubmissionSchema = new Schema(
       enum: ['email', 'phone', 'whatsapp'],
     },
     consent: { type: Boolean, required: true },
-    // The Admin Dashboard task defined the real transition this admin interface uses:
-    // new -> responded, toggled from /admin/enquiries/[id] via apps/api's PATCH endpoint.
-    status: { type: String, required: true, enum: ['new', 'responded'], default: 'new' },
+    // The 4-state reply workflow (`new -> read -> contacted -> closed`, see
+    // packages/shared/src/constants/enquiryStatus.ts). A submission is always created `new`; the
+    // admin interface (apps/api) moves it on. Old rows may still say `responded` until
+    // apps/api/scripts/migrate-enquiry-status.ts has run.
+    status: { type: String, required: true, enum: ENQUIRY_STATUSES, default: ENQUIRY_STATUS.NEW },
+    // Orthogonal to status: an enquiry can be archived from any status.
+    archived: { type: Boolean, required: true, default: false },
+    archivedAt: { type: Date, default: null },
+    // Internal, append-only admin notes. Written only by apps/api; never by the public form.
+    notes: { type: [noteSchema], default: [] },
   },
   { timestamps: { createdAt: true, updatedAt: false } },
 );
 
 contactSubmissionSchema.index({ createdAt: -1 });
-contactSubmissionSchema.index({ status: 1 });
+contactSubmissionSchema.index({ archived: 1, status: 1, createdAt: -1 });
 
 export type ContactSubmissionDocument = InferSchemaType<typeof contactSubmissionSchema>;
 

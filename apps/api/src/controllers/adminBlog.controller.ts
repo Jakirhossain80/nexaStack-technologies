@@ -7,24 +7,12 @@ import {
 } from '@nexastack/shared';
 import type { Request, Response } from 'express';
 
-import { UnauthenticatedError } from '../lib/errors.js';
+import { actionContext } from '../lib/actionContext.js';
 import { sendSuccess } from '../lib/respond.js';
 import { validatedBody, validatedParams, validatedQuery } from '../middleware/validate.js';
 import { mongoIdParamSchema } from '../schemas/adminSubmissions.js';
-import type { AdminActionContext } from '../services/adminActivityLog.service.js';
 import * as categories from '../services/blogCategory.service.js';
 import * as posts from '../services/blogPost.service.js';
-
-/** Who is acting, for the audit log. `requireSession` has already run, so `req.admin` is set;
- * the guard is for the type checker and as a backstop if a route is ever mounted without it. */
-function actionContext(req: Request): AdminActionContext {
-  if (!req.admin) throw new UnauthenticatedError();
-  return {
-    adminId: req.admin.id,
-    ipAddress: req.ip ?? 'unknown',
-    userAgent: req.headers['user-agent'],
-  };
-}
 
 // ---- Posts -------------------------------------------------------------------------------
 

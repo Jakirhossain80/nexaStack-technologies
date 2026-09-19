@@ -2,6 +2,7 @@ import { Router } from 'express';
 
 import { adminRouter } from './admin.routes.js';
 import { adminBlogRouter } from './adminBlog.routes.js';
+import { adminEnquiriesRouter } from './adminEnquiries.routes.js';
 import { authRouter } from './auth.routes.js';
 import { contactRouter } from './contact.routes.js';
 import { healthRouter } from './health.routes.js';
@@ -12,6 +13,9 @@ v1Router.use('/auth', authRouter);
 // Blog is mounted BEFORE the general admin router: that router's blanket role gate excludes
 // `content_editor`, and must not run first for /admin/blog. See adminBlog.routes.ts.
 v1Router.use('/admin/blog', adminBlogRouter);
+// Enquiry management has its own router (with its own role gate) for the same reason it sits
+// before `adminRouter`: its routes are matched here and never fall through to the general router.
+v1Router.use('/admin/enquiries', adminEnquiriesRouter);
 v1Router.use('/admin', adminRouter);
 
 export const router = Router();

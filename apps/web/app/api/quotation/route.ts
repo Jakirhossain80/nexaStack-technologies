@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 
 import { connectToDatabase } from '@/lib/mongodb';
 import { QuotationSubmission } from '@/lib/models/QuotationSubmission';
+import { notifyQuotationSubmission } from '@/lib/notifications';
 import { checkQuotationRateLimit, getClientIp } from '@/lib/quotationRateLimit';
 
 /**
@@ -88,12 +89,9 @@ export async function POST(request: Request): Promise<NextResponse<ApiResponse<u
     );
   }
 
-  // TODO(CLAUDE.md section 22 item 4): send a notification email to the firm and a confirmation
-  // to the sender once a transactional provider (Resend / Postmark / Brevo) is chosen. The
-  // persistence above must succeed first — a failed email must never lose the request.
-  if (process.env.RESEND_API_KEY) {
-    // Deferred: no provider is configured yet, so nothing is sent even if this var appears.
-  }
+  // Deferred email hook, now in one shared place (lib/notifications.ts) instead of a copy here.
+  // Behaviour is unchanged: no provider is configured, so nothing is sent.
+  notifyQuotationSubmission({ referenceNumber });
 
   return jsonSuccess({ referenceNumber }, 201);
 }

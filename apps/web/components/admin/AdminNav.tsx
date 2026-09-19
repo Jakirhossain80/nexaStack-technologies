@@ -7,6 +7,7 @@ import { cn } from '@/lib/cn';
 
 const LINKS = [
   { href: '/admin', label: 'Dashboard' },
+  { href: '/admin/enquiries', label: 'Enquiries' },
   { href: '/admin/blog', label: 'Blog' },
 ] as const;
 
