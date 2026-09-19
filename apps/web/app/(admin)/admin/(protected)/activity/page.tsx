@@ -84,7 +84,13 @@ export default async function AdminActivityPage({ searchParams }: Readonly<Admin
             Showing {result.data.items.length} of {result.data.total}{' '}
             {result.data.total === 1 ? 'event' : 'events'}
           </p>
-          <div className="mt-3 overflow-x-auto rounded-card border border-default">
+          <p className="mt-3 text-label text-secondary lg:hidden">Scroll right to see more &rarr;</p>
+          <div
+            role="region"
+            aria-label="Admin activity table, scrollable horizontally"
+            tabIndex={0}
+            className="mt-2 overflow-x-auto rounded-card border border-default focus-ring lg:mt-3"
+          >
             <table className="w-full min-w-max text-left text-body">
               <caption className="sr-only">Admin activity, newest first</caption>
               <thead className="border-b border-default bg-background-alt">
