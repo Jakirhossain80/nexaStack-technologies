@@ -1,4 +1,4 @@
-import { ENQUIRY_STATUS } from '@nexastack/shared';
+import { ENQUIRY_STATUS, QUOTATION_STATUS } from '@nexastack/shared';
 import mongoose from 'mongoose';
 
 import { ContactSubmission } from '../models/ContactSubmission.js';
@@ -27,7 +27,12 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       archived: mongoose.trusted({ $ne: true }),
     }),
     QuotationSubmission.countDocuments(),
-    QuotationSubmission.countDocuments({ status: 'new' }),
+    // Same rule as enquiries: never looked at AND still in the active view (an archived request has
+    // been put away). `archived: { $ne: true }` so a legacy row without the field still counts.
+    QuotationSubmission.countDocuments({
+      status: QUOTATION_STATUS.NEW,
+      archived: mongoose.trusted({ $ne: true }),
+    }),
   ]);
 
   return {

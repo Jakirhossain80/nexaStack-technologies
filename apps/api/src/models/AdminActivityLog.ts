@@ -34,6 +34,12 @@ const EVENT_TYPES = [
   'enquiry_archived',
   'enquiry_unarchived',
   'enquiry_exported',
+  'quotation_status_changed',
+  'quotation_note_added',
+  'quotation_archived',
+  'quotation_unarchived',
+  'quotation_exported',
+  'quotation_attachment_downloaded',
 ] as const;
 
 const adminActivityLogSchema = new Schema(

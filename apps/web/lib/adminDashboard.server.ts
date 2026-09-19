@@ -60,19 +60,6 @@ export interface EnquirySummary {
   createdAt: string;
 }
 
-export interface SubmissionListParams {
-  status?: 'new' | 'responded';
-  limit?: number;
-}
-
-function listQueryString(params: SubmissionListParams): string {
-  const search = new URLSearchParams();
-  if (params.status) search.set('status', params.status);
-  if (params.limit) search.set('limit', String(params.limit));
-  const query = search.toString();
-  return query ? `?${query}` : '';
-}
-
 /**
  * The newest Contact enquiries that still need attention: NOT archived and status `new` or
  * `read` (opened, but no follow-up recorded yet). `contacted` and `closed` are done, and an
@@ -96,38 +83,15 @@ export interface QuotationSummary {
   createdAt: string;
 }
 
-export interface QuotationDetail extends QuotationSummary {
-  telephone: string;
-  companyName?: string;
-  country: string;
-  requiredServices: string[];
-  businessObjectives: string;
-  targetUsers: string;
-  projectStatus: string;
-  requiredFeatures: string;
-  numberOfPages: string;
-  designRequirements: string;
-  needsAdminDashboard: boolean;
-  needsAuthentication: boolean;
-  integrations?: string;
-  referenceWebsites?: string[];
-  budgetRange: string;
-  preferredStartDate: string;
-  targetCompletionDate?: string;
-  maintenanceRequired: string;
-  attachments?: string[];
-  additionalMessage?: string;
-  consent: boolean;
-}
-
-export async function getQuotations(params: SubmissionListParams = {}): Promise<QuotationSummary[]> {
-  const data = await forwardedGet<{ quotations: QuotationSummary[] }>(
-    `/api/v1/admin/quotations${listQueryString(params)}`,
+/**
+ * The newest quotation requests that still need the founder's action: NOT archived and status `new`
+ * (never looked at) or `reviewing` (being worked on, no quote sent yet). Later stages are with the
+ * client or finished, and an archived request has been put away. The quotation list endpoint takes
+ * a comma list for `status` and returns a paginated `{ items }` (Quotation Management).
+ */
+export async function getQuotationsNeedingAttention(limit: number): Promise<QuotationSummary[]> {
+  const data = await forwardedGet<{ items: QuotationSummary[] }>(
+    `/api/v1/admin/quotations?status=new,reviewing&limit=${limit}`,
   );
-  return data?.quotations ?? [];
-}
-
-export async function getQuotationById(id: string): Promise<QuotationDetail | null> {
-  const data = await forwardedGet<{ quotation: QuotationDetail }>(`/api/v1/admin/quotations/${id}`);
-  return data?.quotation ?? null;
+  return data?.items ?? [];
 }

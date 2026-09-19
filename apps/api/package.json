@@ -11,7 +11,9 @@
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "seed-admin": "tsx --env-file-if-exists=.env scripts/seed-admin.ts",
-    "migrate-enquiries": "tsx --env-file-if-exists=.env scripts/migrate-enquiry-status.ts"
+    "migrate-enquiries": "tsx --env-file-if-exists=.env scripts/migrate-enquiry-status.ts",
+    "migrate-quotations": "tsx --env-file-if-exists=.env scripts/migrate-quotation-status.ts",
+    "migrate-quotation-attachments": "tsx --env-file-if-exists=.env scripts/migrate-quotation-attachments.ts"
   },
   "dependencies": {
     "@nexastack/shared": "workspace:*",

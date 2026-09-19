@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 import { Select, type SelectOption } from '@/components/ui/Select';
+import { cn } from '@/lib/cn';
 
 export interface ContentFilter {
   /** The URL search param this filter controls. */
@@ -107,13 +108,17 @@ export function ContentListFilters({
   }
 
   const filters = [statusFilter, ...extraFilters];
+  // Two filters (blog, enquiries) sit beside the search box on one row; a third (quotations add a
+  // project type) gets its own column instead of wrapping onto a second row.
+  const desktopColumns =
+    filters.length > 2 ? 'lg:grid-cols-[2fr_1fr_1fr_1fr]' : 'lg:grid-cols-[2fr_1fr_1fr]';
 
   return (
     <form
       role="search"
       aria-label={searchLabel}
       onSubmit={(event) => event.preventDefault()}
-      className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr]"
+      className={cn('mt-8 grid gap-4 sm:grid-cols-2', desktopColumns)}
     >
       <div className="flex flex-col gap-2">
         <label htmlFor="content-search" className={LABEL_CLASSES}>

@@ -86,6 +86,15 @@ const envSchema = z.object({
   // Number of reverse-proxy hops in front of the API (Render: 1). Needed so rate limiting
   // sees the real client IP. 0 = trust none (local development).
   TRUST_PROXY: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).default(0)),
+
+  // OPTIONAL. Cloudinary credentials, used only to retrieve quotation attachments for the admin
+  // (lib/cloudinary.ts). Uploads are made by apps/web with its own copy of these values. When any
+  // of the three is unset the API still runs; attachments are then listed but cannot be
+  // downloaded (503), instead of pretending to work. Must be the SAME Cloudinary account as
+  // apps/web's. Never prefix with NEXT_PUBLIC_, never commit real values.
+  CLOUDINARY_CLOUD_NAME: z.preprocess(emptyToUndefined, z.string().optional()),
+  CLOUDINARY_API_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
+  CLOUDINARY_API_SECRET: z.preprocess(emptyToUndefined, z.string().optional()),
 });
 
 export type Env = z.infer<typeof envSchema>;

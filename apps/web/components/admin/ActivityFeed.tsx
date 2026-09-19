@@ -30,6 +30,12 @@ const EVENT_LABELS: Record<string, string> = {
   enquiry_archived: 'Enquiry archived',
   enquiry_unarchived: 'Enquiry restored from archive',
   enquiry_exported: 'Enquiries exported to CSV',
+  quotation_status_changed: 'Quotation status changed',
+  quotation_note_added: 'Quotation note added',
+  quotation_archived: 'Quotation archived',
+  quotation_unarchived: 'Quotation restored from archive',
+  quotation_exported: 'Quotations exported to CSV',
+  quotation_attachment_downloaded: 'Quotation attachment downloaded',
 };
 
 function formatTimestamp(iso: string): string {

@@ -1,20 +1,14 @@
 import { Router } from 'express';
 
 import * as dashboardController from '../controllers/adminDashboard.controller.js';
-import * as submissionsController from '../controllers/adminSubmissions.controller.js';
 import { requireRole } from '../middleware/requireRole.js';
 import { requireSession } from '../middleware/requireSession.js';
 import { validate } from '../middleware/validate.js';
-import {
-  mongoIdParamSchema,
-  recentActivityQuerySchema,
-  submissionListQuerySchema,
-  updateSubmissionStatusSchema,
-} from '../schemas/adminSubmissions.js';
+import { recentActivityQuerySchema } from '../schemas/adminSubmissions.js';
 
 /**
- * Dashboard-supporting endpoints for the admin landing page and the minimal quotations view
- * (Contact enquiries have their own router, adminEnquiries.routes.ts). Every route requires a valid session *and* one of the two
+ * Dashboard-supporting endpoints for the admin landing page (Contact enquiries and quotation
+ * requests have their own routers: adminEnquiries.routes.ts, adminQuotations.routes.ts). Every route requires a valid session *and* one of the two
  * roles the RBAC table in apps/api/CLAUDE.md section 5 scopes enquiries/quotations/media to
  * ('super_admin', 'admin') — not 'content_editor', which is blog/portfolio content only.
  * No rate limiter: these are session-gated admin reads/writes, not public or auth-specific
@@ -57,48 +51,5 @@ adminRouter.get(
   dashboardController.getRecentActivity,
 );
 
-// Contact enquiries moved to their own router: routes/adminEnquiries.routes.ts.
-
-/**
- * @openapi
- * /api/v1/admin/quotations:
- *   get:
- *     summary: List Quotation submissions
- *     description: Optional ?status=new|responded and ?limit= (default 50).
- *     tags: [Admin]
- *     responses:
- *       200: { description: Quotation summaries. }
- */
-adminRouter.get(
-  '/quotations',
-  validate({ query: submissionListQuerySchema }),
-  submissionsController.listQuotations,
-);
-
-/**
- * @openapi
- * /api/v1/admin/quotations/{id}:
- *   get:
- *     summary: Quotation submission detail
- *     tags: [Admin]
- *     responses:
- *       200: { description: Full quotation content. }
- *       404: { description: Not found (NOT_FOUND). }
- *   patch:
- *     summary: Update a Quotation submission's status
- *     description: Status only — new to responded (or back). Not a general edit endpoint.
- *     tags: [Admin]
- *     responses:
- *       200: { description: Status updated. }
- *       404: { description: Not found (NOT_FOUND). }
- */
-adminRouter.get(
-  '/quotations/:id',
-  validate({ params: mongoIdParamSchema }),
-  submissionsController.getQuotation,
-);
-adminRouter.patch(
-  '/quotations/:id',
-  validate({ params: mongoIdParamSchema, body: updateSubmissionStatusSchema }),
-  submissionsController.updateQuotationStatus,
-);
+// Contact enquiries and quotation requests moved to their own routers:
+// routes/adminEnquiries.routes.ts and routes/adminQuotations.routes.ts.

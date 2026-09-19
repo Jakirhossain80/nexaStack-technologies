@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import {
   getDashboardStats,
   getEnquiriesNeedingAttention,
-  getQuotations,
+  getQuotationsNeedingAttention,
   getRecentActivity,
 } from '@/lib/adminDashboard.server';
 import { getAllPosts } from '@/lib/blog';
@@ -42,7 +42,7 @@ export default async function AdminDashboardPage() {
   const [stats, newEnquiries, newQuotations, activity] = await Promise.all([
     getDashboardStats(),
     getEnquiriesNeedingAttention(ATTENTION_LIMIT),
-    getQuotations({ status: 'new', limit: ATTENTION_LIMIT }),
+    getQuotationsNeedingAttention(ATTENTION_LIMIT),
     getRecentActivity(ACTIVITY_LIMIT),
   ]);
 

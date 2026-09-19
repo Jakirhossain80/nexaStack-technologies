@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { adminRouter } from './admin.routes.js';
 import { adminBlogRouter } from './adminBlog.routes.js';
 import { adminEnquiriesRouter } from './adminEnquiries.routes.js';
+import { adminQuotationsRouter } from './adminQuotations.routes.js';
 import { authRouter } from './auth.routes.js';
 import { contactRouter } from './contact.routes.js';
 import { healthRouter } from './health.routes.js';
@@ -16,6 +17,9 @@ v1Router.use('/admin/blog', adminBlogRouter);
 // Enquiry management has its own router (with its own role gate) for the same reason it sits
 // before `adminRouter`: its routes are matched here and never fall through to the general router.
 v1Router.use('/admin/enquiries', adminEnquiriesRouter);
+// Quotation management: same reasoning. It replaces the minimal quotation routes that used to live
+// in `adminRouter`.
+v1Router.use('/admin/quotations', adminQuotationsRouter);
 v1Router.use('/admin', adminRouter);
 
 export const router = Router();

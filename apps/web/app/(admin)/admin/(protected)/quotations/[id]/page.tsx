@@ -1,138 +1,134 @@
-import {
-  BUDGET_RANGE_OPTIONS,
-  DESIGN_REQUIREMENTS_OPTIONS,
-  MAINTENANCE_OPTIONS,
-  NUMBER_OF_PAGES_OPTIONS,
-  PROJECT_TYPE_OPTIONS,
-  REQUIRED_SERVICE_OPTIONS,
-} from '@nexastack/shared';
+import { OBJECT_ID_PATTERN } from '@nexastack/shared';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { Badge } from '@/components/ui/Badge';
-import { StatusToggle } from '@/components/admin/StatusToggle';
-import { getQuotationById } from '@/lib/adminDashboard.server';
-
-// Same label lookup the public wizard's own Step 5 review uses (QuotationStepFinal.tsx) —
-// stored values are the raw option value (e.g. "new-website"), not the human-readable label.
-function labelFor(options: readonly { value: string; label: string }[], value: string | undefined): string {
-  return options.find((option) => option.value === value)?.label ?? (value || '—');
-}
+import { ContentEditorHeader } from '@/components/admin/content/ContentEditorHeader';
+import { LoadError } from '@/components/admin/content/LoadError';
+import { EnquiryNotes } from '@/components/admin/enquiries/EnquiryNotes';
+import { ContactClientActions } from '@/components/admin/quotations/ContactClientActions';
+import { QuotationArchiveButton } from '@/components/admin/quotations/QuotationArchiveButton';
+import { QuotationNoteForm } from '@/components/admin/quotations/QuotationNoteForm';
+import { QuotationRequestSummary } from '@/components/admin/quotations/QuotationRequestSummary';
+import { QuotationStatusBadge } from '@/components/admin/quotations/QuotationStatusBadge';
+import { QuotationStatusControl } from '@/components/admin/quotations/QuotationStatusControl';
+import { company } from '@/config/company';
+import { getQuotationDetail } from '@/lib/adminQuotations.server';
+import { projectTypeLabel } from '@/lib/quotationLabels';
 
 interface QuotationDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
 export const metadata: Metadata = {
-  title: 'Quotation request detail',
+  title: 'Quotation request',
 };
 
 function formatTimestamp(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
-  return new Intl.DateTimeFormat('en-US', { dateStyle: 'long', timeStyle: 'short' }).format(date);
+  return new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'long',
+    timeStyle: 'short',
+    timeZone: company.hours.timeZone,
+  }).format(date);
 }
 
-function Field({ label, value }: { label: string; value: string | number | boolean | undefined }) {
-  if (value === undefined || value === '') return null;
-  const display = typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value;
-  return (
-    <div>
-      <dt className="text-label text-secondary">{label}</dt>
-      <dd className="mt-1 whitespace-pre-wrap text-body text-primary">{display}</dd>
-    </div>
-  );
-}
-
+/**
+ * One quotation request. Reading it changes nothing (no automatic status change on open).
+ *
+ * Three visually separate areas, so it is always obvious what the client wrote and what is internal:
+ * (1) follow-up: the admin's own controls (status, contact the client, archive); (2) the request
+ * exactly as the client submitted it, in the same five groups as the form they filled in, read-only;
+ * (3) internal notes, which the client never sees.
+ */
 export default async function QuotationDetailPage({ params }: QuotationDetailPageProps) {
   const { id } = await params;
-  const quotation = await getQuotationById(id);
-  if (!quotation) notFound();
+  if (!OBJECT_ID_PATTERN.test(id)) notFound();
 
-  const status = quotation.status === 'responded' ? 'responded' : 'new';
+  const result = await getQuotationDetail(id);
+  if (!result.ok && result.status === 404) notFound();
+  if (!result.ok) {
+    return <LoadError subject="this quotation request" status={result.status} message={result.message} />;
+  }
+
+  const quotation = result.data;
+  const projectType = projectTypeLabel(quotation.projectType);
 
   return (
-    <div className="max-w-2xl">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-page font-semibold tracking-tight text-primary">
-          {quotation.fullName} — {labelFor(PROJECT_TYPE_OPTIONS, quotation.projectType)}
-        </h1>
-        <Badge>{quotation.status}</Badge>
-      </div>
-      <p className="mt-1 text-label text-secondary">
-        Reference {quotation.referenceNumber} · Submitted {formatTimestamp(quotation.createdAt)}
-      </p>
+    <div className="max-w-4xl">
+      <ContentEditorHeader
+        title={`${quotation.fullName} — ${projectType}`}
+        backHref="/admin/quotations"
+        backLabel="All quotation requests"
+        badges={
+          <>
+            <QuotationStatusBadge status={quotation.status} />
+            {quotation.archived && (
+              <span className="text-label font-medium text-secondary">Archived</span>
+            )}
+          </>
+        }
+        description={
+          <>
+            Reference <span className="font-mono">{quotation.referenceNumber}</span> · Submitted{' '}
+            {formatTimestamp(quotation.createdAt)}
+          </>
+        }
+      />
 
-      <div className="mt-8 space-y-6">
-        <section className="rounded-card border border-default bg-surface p-5">
-          <h2 className="text-card font-semibold text-primary">Client information</h2>
-          <dl className="mt-4 space-y-4">
-            <Field label="Name" value={quotation.fullName} />
-            <Field label="Email" value={quotation.email} />
-            <Field label="Telephone" value={quotation.telephone} />
-            <Field label="Company" value={quotation.companyName} />
-            <Field label="Country" value={quotation.country} />
-          </dl>
-        </section>
-
-        <section className="rounded-card border border-default bg-surface p-5">
-          <h2 className="text-card font-semibold text-primary">Project information</h2>
-          <dl className="mt-4 space-y-4">
-            <Field label="Project type" value={labelFor(PROJECT_TYPE_OPTIONS, quotation.projectType)} />
-            <Field
-              label="Required services"
-              value={quotation.requiredServices.map((v) => labelFor(REQUIRED_SERVICE_OPTIONS, v)).join(', ')}
+      <section aria-labelledby="followup-heading" className="mt-10">
+        <h2 id="followup-heading" className="text-card font-semibold text-primary">
+          Follow-up
+        </h2>
+        <div className="mt-4 space-y-6 rounded-card border border-default bg-surface p-5 sm:p-6">
+          <QuotationStatusControl quotationId={quotation.id} status={quotation.status} />
+          <div className="border-t border-default pt-6">
+            <ContactClientActions
+              fullName={quotation.fullName}
+              email={quotation.email}
+              telephone={quotation.telephone}
+              country={quotation.country}
+              projectTypeLabel={projectType}
+              referenceNumber={quotation.referenceNumber}
             />
-            <Field label="Business objectives" value={quotation.businessObjectives} />
-            <Field label="Target users" value={quotation.targetUsers} />
-            <Field
-              label="Project status"
-              value={quotation.projectStatus === 'existing' ? 'Existing project' : 'New project'}
-            />
-          </dl>
-        </section>
+          </div>
+          <div className="border-t border-default pt-6">
+            <QuotationArchiveButton quotationId={quotation.id} archived={quotation.archived} />
+          </div>
+        </div>
+      </section>
 
-        <section className="rounded-card border border-default bg-surface p-5">
-          <h2 className="text-card font-semibold text-primary">Project requirements</h2>
-          <dl className="mt-4 space-y-4">
-            <Field label="Required features" value={quotation.requiredFeatures} />
-            <Field label="Number of pages" value={labelFor(NUMBER_OF_PAGES_OPTIONS, quotation.numberOfPages)} />
-            <Field
-              label="Design requirements"
-              value={labelFor(DESIGN_REQUIREMENTS_OPTIONS, quotation.designRequirements)}
-            />
-            <Field label="Needs an admin dashboard" value={quotation.needsAdminDashboard} />
-            <Field label="Needs authentication" value={quotation.needsAuthentication} />
-            <Field label="Integrations" value={quotation.integrations} />
-            <Field label="Reference websites" value={quotation.referenceWebsites?.join(', ')} />
-          </dl>
-        </section>
+      <section aria-labelledby="submitted-heading" className="mt-14">
+        <h2 id="submitted-heading" className="text-section font-semibold text-primary">
+          What the client submitted
+        </h2>
+        <p className="mt-1 text-label text-secondary">
+          Exactly as they sent it, in the order of the form they filled in. Read-only.
+        </p>
+        <div className="mt-8">
+          <QuotationRequestSummary quotation={quotation} />
+        </div>
+      </section>
 
-        <section className="rounded-card border border-default bg-surface p-5">
-          <h2 className="text-card font-semibold text-primary">Budget and timeline</h2>
-          <dl className="mt-4 space-y-4">
-            <Field label="Budget range" value={labelFor(BUDGET_RANGE_OPTIONS, quotation.budgetRange)} />
-            <Field label="Preferred start date" value={quotation.preferredStartDate} />
-            <Field label="Target completion date" value={quotation.targetCompletionDate} />
-            <Field
-              label="Maintenance required"
-              value={labelFor(MAINTENANCE_OPTIONS, quotation.maintenanceRequired)}
-            />
-          </dl>
-        </section>
-
-        <section className="rounded-card border border-default bg-surface p-5">
-          <h2 className="text-card font-semibold text-primary">Final submission</h2>
-          <dl className="mt-4 space-y-4">
-            <Field label="Attachments" value={quotation.attachments?.join(', ')} />
-            <Field label="Additional message" value={quotation.additionalMessage} />
-          </dl>
-        </section>
-      </div>
-
-      <div className="mt-6">
-        <StatusToggle kind="quotations" id={quotation.id} currentStatus={status} />
-      </div>
+      <section
+        aria-labelledby="notes-heading"
+        className="mt-14 rounded-card border border-dashed border-strong bg-background-alt p-5 sm:p-6"
+      >
+        <h2 id="notes-heading" className="text-card font-semibold text-primary">
+          Internal notes
+        </h2>
+        <p className="mt-1 text-label text-secondary">
+          Internal only. The client never sees these.
+        </p>
+        <div className="mt-4">
+          <EnquiryNotes notes={quotation.notes} />
+        </div>
+        {/* On a `surface` card: the form's error text (text-error) is a verified pairing on
+            surface and background, but not on this section's background-alt. */}
+        <div className="mt-6 rounded-field border border-default bg-surface p-4">
+          <QuotationNoteForm quotationId={quotation.id} />
+        </div>
+      </section>
     </div>
   );
 }

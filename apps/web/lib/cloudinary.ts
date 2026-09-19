@@ -12,9 +12,17 @@ import { serverEnv } from './env.server';
  * table lists Cloudinary, but no credentials exist). `isCloudinaryConfigured` lets the upload
  * route degrade the same way `/api/contact` degrades when Turnstile is unset: a clear error
  * instead of a fake success.
+ *
+ * CONFIDENTIALITY. Quotation attachments are client project material, so they are uploaded as
+ * Cloudinary `type=authenticated`: the bare URL does not work, and only apps/api (which holds the
+ * API secret) can retrieve a file, after checking the admin session (see
+ * apps/api/src/lib/cloudinary.ts). Before Quotation Management they were uploaded with the default
+ * `type=upload`, a public URL that never expires; `apps/api/scripts/migrate-quotation-attachments.ts`
+ * moves the ones that already exist.
  */
 
 const CLOUDINARY_FOLDER = 'nexastack/quotations';
+const DELIVERY_TYPE = 'authenticated';
 
 export function isCloudinaryConfigured(): boolean {
   return Boolean(
@@ -42,7 +50,7 @@ export async function uploadBufferToCloudinary(
   const timestamp = Math.floor(Date.now() / 1000).toString();
   // Cloudinary signs every parameter sent except file, cloud_name, resource_type and api_key,
   // sorted alphabetically as `key=value&key=value...` with the API secret appended.
-  const paramsToSign = `folder=${CLOUDINARY_FOLDER}&timestamp=${timestamp}`;
+  const paramsToSign = `folder=${CLOUDINARY_FOLDER}&timestamp=${timestamp}&type=${DELIVERY_TYPE}`;
   const signature = createHash('sha1').update(paramsToSign + apiSecret).digest('hex');
 
   const form = new FormData();
@@ -50,6 +58,7 @@ export async function uploadBufferToCloudinary(
   form.append('api_key', apiKey);
   form.append('timestamp', timestamp);
   form.append('folder', CLOUDINARY_FOLDER);
+  form.append('type', DELIVERY_TYPE);
   form.append('signature', signature);
 
   const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
@@ -61,8 +70,29 @@ export async function uploadBufferToCloudinary(
     throw new Error(`Cloudinary upload failed with status ${response.status}`);
   }
 
-  const data = (await response.json()) as { secure_url: string; bytes: number; format: string };
-  return { url: data.secure_url, bytes: data.bytes, format: data.format };
+  const data = (await response.json()) as {
+    bytes: number;
+    format?: string;
+    public_id?: string;
+    resource_type?: string;
+    type?: string;
+    version?: number;
+  };
+
+  // Never store something as private that Cloudinary did not actually make private.
+  if (data.type !== DELIVERY_TYPE) {
+    throw new Error('Cloudinary did not store the upload as authenticated');
+  }
+  if (!data.public_id || !data.resource_type || typeof data.version !== 'number') {
+    throw new Error('Cloudinary returned an unexpected upload response');
+  }
+
+  // Deliberately NOT `secure_url`: for an authenticated asset that URL embeds a signature that never
+  // expires, so storing it would keep a live bearer link in the database. This canonical form has no
+  // signature and grants nothing on its own; apps/api parses it to fetch the file with the secret.
+  const extension = data.format ? `.${data.format}` : '';
+  const url = `https://res.cloudinary.com/${cloudName}/${data.resource_type}/${DELIVERY_TYPE}/v${data.version}/${data.public_id}${extension}`;
+  return { url, bytes: data.bytes, format: data.format ?? '' };
 }
 
 export type SniffedFileType = 'application/pdf' | 'image/png' | 'image/jpeg';

@@ -49,6 +49,12 @@ export {
   quotationStep3Schema,
   quotationStep4Schema,
 } from './schemas/quotation.js';
+export {
+  QUOTATION_NOTE_MAX,
+  QUOTATION_NOTES_MAX,
+  quotationNoteSchema,
+  quotationStatusChangeSchema,
+} from './schemas/quotationAdmin.js';
 
 // Types
 export type { LoginInput, PasswordResetConfirmInput, PasswordResetRequestInput } from './types/auth.js';
@@ -91,6 +97,14 @@ export type {
   QuotationStep4Input,
 } from './types/quotation.js';
 export type {
+  QuotationAdminDetail,
+  QuotationAdminSummary,
+  QuotationAttachmentAdmin,
+  QuotationNoteAdmin,
+  QuotationNoteInput,
+  QuotationStatusChangeInput,
+} from './types/quotationAdmin.js';
+export type {
   ApiErrorBody,
   ApiFailure,
   ApiResponse,
@@ -119,5 +133,15 @@ export {
   getAvailableEnquiryTransitions,
   type EnquiryStatus,
 } from './constants/enquiryStatus.js';
+export {
+  QUOTATION_ATTENTION_STATUSES,
+  QUOTATION_STATUS,
+  QUOTATION_STATUS_TRANSITIONS,
+  QUOTATION_STATUSES,
+  canTransitionQuotation,
+  getAvailableQuotationTransitions,
+  quotationStatusSchema,
+  type QuotationStatus,
+} from './constants/quotationStatus.js';
 export { ERROR_CODES, type ErrorCode } from './constants/errorCodes.js';
 export { COUNTRIES } from './constants/countries.js';
