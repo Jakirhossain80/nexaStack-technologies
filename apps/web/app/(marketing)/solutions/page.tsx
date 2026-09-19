@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { SolutionCard } from '@/components/sections/SolutionCard';
+import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
 import { company } from '@/config/company';
 import { solutions } from '@/config/solutions';
@@ -41,16 +42,22 @@ export default function SolutionsPage() {
     <>
       <section aria-labelledby="solutions-heading" className="bg-background">
         <div className="page-container section-y">
-          <ScrollReveal className="mx-auto max-w-2xl text-center">
-            <h1 id="solutions-heading" className="text-page font-semibold tracking-tight text-primary">
+          <Breadcrumb
+            items={[{ label: 'Home', href: '/' }, { label: 'Solutions and Industries' }]}
+          />
+
+          <ScrollReveal className="mx-auto mt-8 max-w-2xl text-center">
+            <h1
+              id="solutions-heading"
+              className="text-page font-semibold tracking-tight text-primary"
+            >
               Solutions and Industries
             </h1>
             <p className="mt-4 text-body-lg text-secondary">
-              {company.legalName} builds around what each kind of business actually needs, not
-              an off-the-shelf package applied regardless of fit. The pages below describe how
-              the same MERN and Next.js stack, and the same development process, would approach
-              a few common kinds of projects — a starting point for a conversation, not a fixed
-              template.
+              {company.legalName} builds around what each kind of business actually needs, not an
+              off-the-shelf package applied regardless of fit. The pages below describe how the same
+              MERN and Next.js stack, and the same development process, would approach a few common
+              kinds of projects — a starting point for a conversation, not a fixed template.
             </p>
           </ScrollReveal>
         </div>

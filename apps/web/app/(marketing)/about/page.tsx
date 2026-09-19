@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { Button } from '@/components/ui/Button';
 import { CoreValueIcon } from '@/components/ui/CoreValueIcon';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
@@ -37,7 +38,12 @@ export default function AboutPage() {
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: `${env.NEXT_PUBLIC_SITE_URL}/` },
-      { '@type': 'ListItem', position: 2, name: 'About', item: `${env.NEXT_PUBLIC_SITE_URL}/about` },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'About',
+        item: `${env.NEXT_PUBLIC_SITE_URL}/about`,
+      },
     ],
   };
 
@@ -46,7 +52,9 @@ export default function AboutPage() {
       {/* Page header */}
       <section aria-labelledby="about-heading" className="bg-background">
         <div className="page-container section-y">
-          <ScrollReveal className="mx-auto max-w-2xl text-center">
+          <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'About' }]} />
+
+          <ScrollReveal className="mx-auto mt-8 max-w-2xl text-center">
             <h1 id="about-heading" className="text-page font-semibold tracking-tight text-primary">
               About NexaStack
             </h1>
@@ -71,7 +79,10 @@ export default function AboutPage() {
       <section aria-labelledby="story-heading" className="bg-background">
         <div className="page-container section-y">
           <ScrollReveal className="mx-auto max-w-2xl">
-            <h2 id="story-heading" className="text-section font-semibold tracking-tight text-primary">
+            <h2
+              id="story-heading"
+              className="text-section font-semibold tracking-tight text-primary"
+            >
               {about.story.heading}
             </h2>
             <div className="mt-6 space-y-4">
@@ -95,11 +106,15 @@ export default function AboutPage() {
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div className="rounded-card border border-default p-6">
                 <p className={LABEL_CLASSES}>Mission</p>
-                <p className="mt-3 text-card font-medium text-primary">{about.missionVision.mission}</p>
+                <p className="mt-3 text-card font-medium text-primary">
+                  {about.missionVision.mission}
+                </p>
               </div>
               <div className="rounded-card border border-default p-6">
                 <p className={LABEL_CLASSES}>Vision</p>
-                <p className="mt-3 text-card font-medium text-primary">{about.missionVision.vision}</p>
+                <p className="mt-3 text-card font-medium text-primary">
+                  {about.missionVision.vision}
+                </p>
               </div>
             </div>
           </ScrollReveal>
@@ -112,7 +127,7 @@ export default function AboutPage() {
           <ScrollReveal>
             <h2
               id="values-heading"
-              className="text-section font-semibold tracking-tight text-primary text-center"
+              className="text-center text-section font-semibold tracking-tight text-primary"
             >
               Core Values
             </h2>
@@ -177,9 +192,9 @@ export default function AboutPage() {
                   <p key={index} className="text-body-lg text-secondary">
                     {index === 1 ? (
                       <>
-                        Until that&rsquo;s written up, the most honest signal available right now is the code
-                        itself: this site is built with the exact stack described below, and the source is
-                        public on{' '}
+                        Until that&rsquo;s written up, the most honest signal available right now is
+                        the code itself: this site is built with the exact stack described below,
+                        and the source is public on{' '}
                         <a
                           href={company.social.github}
                           target="_blank"
@@ -214,7 +229,10 @@ export default function AboutPage() {
             <ul className="mt-8 space-y-6">
               {about.philosophy.map((item) => (
                 <li key={item.id} className="flex gap-4">
-                  <span aria-hidden="true" className="mt-2.5 size-1.5 shrink-0 rounded-full bg-primary-blue" />
+                  <span
+                    aria-hidden="true"
+                    className="mt-2.5 size-1.5 shrink-0 rounded-full bg-primary-blue"
+                  />
                   <div>
                     <p className="text-card font-semibold text-primary">{item.title}</p>
                     <p className="mt-1 text-body text-secondary">{item.description}</p>
@@ -287,7 +305,8 @@ export default function AboutPage() {
               Ready to start a conversation?
             </h2>
             <p className="mt-4 text-body-lg text-secondary">
-              Tell us what you&rsquo;re building — you&rsquo;ll hear back directly, not through a queue.
+              Tell us what you&rsquo;re building — you&rsquo;ll hear back directly, not through a
+              queue.
             </p>
             <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Button href={navigationActions.quote.href} className="w-full sm:w-auto">

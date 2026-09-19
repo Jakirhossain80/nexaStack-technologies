@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { ServiceCard } from '@/components/sections/ServiceCard';
+import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { Button } from '@/components/ui/Button';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
 import { company } from '@/config/company';
@@ -17,7 +18,12 @@ export const metadata: Metadata = {
 
 // Real, non-arbitrary split: services that build something new vs. services that work on
 // something that already exists. Not every service list clusters this cleanly — this one does.
-const BUILD_SLUGS = ['business-websites', 'mern-nextjs-applications', 'admin-dashboards', 'backend-and-apis'];
+const BUILD_SLUGS = [
+  'business-websites',
+  'mern-nextjs-applications',
+  'admin-dashboards',
+  'backend-and-apis',
+];
 const SUPPORT_SLUGS = ['maintenance-and-bug-fixing', 'performance-seo-audits'];
 
 function getServices(slugs: readonly string[]): Service[] {
@@ -59,7 +65,12 @@ export default function ServicesPage() {
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: `${env.NEXT_PUBLIC_SITE_URL}/` },
-      { '@type': 'ListItem', position: 2, name: 'Services', item: `${env.NEXT_PUBLIC_SITE_URL}/services` },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Services',
+        item: `${env.NEXT_PUBLIC_SITE_URL}/services`,
+      },
     ],
   };
 
@@ -68,16 +79,20 @@ export default function ServicesPage() {
       {/* Page header */}
       <section aria-labelledby="services-heading" className="bg-background">
         <div className="page-container section-y">
-          <ScrollReveal className="mx-auto max-w-2xl text-center">
-            <h1 id="services-heading" className="text-page font-semibold tracking-tight text-primary">
+          <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Services' }]} />
+
+          <ScrollReveal className="mx-auto mt-8 max-w-2xl text-center">
+            <h1
+              id="services-heading"
+              className="text-page font-semibold tracking-tight text-primary"
+            >
               Services
             </h1>
             <p className="mt-4 text-body-lg text-secondary">
-              NexaStack builds and maintains web projects end to end — marketing sites,
-              full-stack applications, admin tools, APIs and the ongoing work of keeping them
-              running well. There&rsquo;s no fixed package: every engagement is scoped around
-              what your project actually needs, from a single landing page to a full
-              application with its own backend.
+              NexaStack builds and maintains web projects end to end — marketing sites, full-stack
+              applications, admin tools, APIs and the ongoing work of keeping them running well.
+              There&rsquo;s no fixed package: every engagement is scoped around what your project
+              actually needs, from a single landing page to a full application with its own backend.
             </p>
           </ScrollReveal>
         </div>

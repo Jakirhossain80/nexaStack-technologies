@@ -24,17 +24,23 @@ const webEnvSchema = z.object({
   // Optional: unset until Cloudflare Turnstile is configured (CLAUDE.md 22, /contact form).
   // When unset, the Turnstile widget does not render and /api/contact skips verification.
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
+  // Optional: the verification code Google Search Console issues once a real domain (CLAUDE.md
+  // 22.1) is registered as a property. Not a secret (it's meant to be public in a meta tag) —
+  // when unset, the root layout renders no verification tag at all rather than an empty one.
+  GOOGLE_SITE_VERIFICATION: z.preprocess(emptyToUndefined, z.string().optional()),
   // REQUIRED. The Express API's origin (no trailing slash) — root CLAUDE.md 22.5 reserves
   // apps/api for the admin interface, so the admin login form calls it directly rather than
   // proxying through a Next.js Route Handler. Not a secret (it's the same origin CORS already
   // allowlists), so one NEXT_PUBLIC_* value covers both the client-side login fetch and the
   // server-side session check in app/(admin)/admin/(protected)/layout.tsx.
-  NEXT_PUBLIC_API_URL: z.preprocess(
-    emptyToUndefined,
-    isProduction
-      ? z.url({ protocol: /^https?$/, error: 'is required for production builds but not set' })
-      : z.url().default('http://localhost:4000'),
-  ).transform((url) => url.replace(/\/+$/, '')),
+  NEXT_PUBLIC_API_URL: z
+    .preprocess(
+      emptyToUndefined,
+      isProduction
+        ? z.url({ protocol: /^https?$/, error: 'is required for production builds but not set' })
+        : z.url().default('http://localhost:4000'),
+    )
+    .transform((url) => url.replace(/\/+$/, '')),
 });
 
 // NEXT_PUBLIC_* variables must be referenced literally so Next.js can inline them.
@@ -42,6 +48,7 @@ const parsed = webEnvSchema.safeParse({
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  GOOGLE_SITE_VERIFICATION: process.env.GOOGLE_SITE_VERIFICATION,
 });
 
 if (!parsed.success) {

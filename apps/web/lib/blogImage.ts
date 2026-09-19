@@ -17,7 +17,21 @@ export interface ShareImage {
   url: string;
   width?: number;
   height?: number;
+  alt?: string;
 }
+
+/**
+ * Sitewide fallback share image (root CLAUDE.md 22 — no per-project screenshot exists yet for
+ * most pages, and most blog posts won't have a cover either). Root `layout.tsx` uses this
+ * directly as the default OG/Twitter image; `blog/[slug]/page.tsx` falls back to it when a post
+ * has no usable cover, so a post is never shared with literally no image.
+ */
+export const DEFAULT_SHARE_IMAGE: ShareImage = {
+  url: '/og/default-share.png',
+  width: 1200,
+  height: 630,
+  alt: 'NexaStack Technologies — We Build Better Websites',
+};
 
 const SHARE_TRANSFORMATION = 'f_auto,q_auto,c_fill,g_auto,w_1200,h_630';
 const CLOUDINARY_PREFIX = 'https://res.cloudinary.com/';

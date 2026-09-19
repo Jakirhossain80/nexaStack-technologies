@@ -11,6 +11,7 @@ import { company } from '@/config/company';
 import type { BlogPost, BlogPostDetail } from '@/lib/blog';
 import { computeReadingTime } from '@/lib/blog';
 import { cn } from '@/lib/cn';
+import { env } from '@/lib/env';
 
 // Dev-only route, not linked from anywhere on the site — same treatment as /dev/tokens,
 // /dev/testimonials-preview and /dev/blog-preview. Excluded from the sitemap (never added to
@@ -53,11 +54,13 @@ const FIXTURE_CONTENT_HTML = `
 const FIXTURE_POST: BlogPostDetail = {
   slug: 'sample-article-template-preview',
   title: 'Sample Article: A Placeholder Headline for Template Testing',
-  excerpt: 'A fixture-only article used to verify the detail template renders correctly before any real post exists.',
+  excerpt:
+    'A fixture-only article used to verify the detail template renders correctly before any real post exists.',
   category: 'Web Development',
   tags: ['Sample', 'Next.js'],
   coverImage: '/brand/nexastack-mark.png',
-  coverImageAlt: 'The NexaStack Technologies mark, used here only to prove the image path renders — not a real cover photo.',
+  coverImageAlt:
+    'The NexaStack Technologies mark, used here only to prove the image path renders — not a real cover photo.',
   publishedAt: '2026-02-10',
   author: { name: company.founder.name, role: company.founder.jobTitle },
   contentHtml: FIXTURE_CONTENT_HTML,
@@ -73,7 +76,8 @@ const RELATED_FIXTURES: readonly BlogPost[] = [
   {
     slug: 'sample-related-post-one',
     title: 'Sample Related Post One',
-    excerpt: 'A second fixture, used only to verify the related-articles section renders a real grid.',
+    excerpt:
+      'A second fixture, used only to verify the related-articles section renders a real grid.',
     category: 'Web Development',
     tags: ['Sample'],
     publishedAt: '2026-01-20',
@@ -93,7 +97,7 @@ interface ThemePanelProps {
 }
 
 function ThemePanel({ mode }: ThemePanelProps) {
-  const canonicalUrl = 'https://nexastack.example/blog/sample-article-template-preview';
+  const canonicalUrl = `${env.NEXT_PUBLIC_SITE_URL}/blog/sample-article-template-preview`;
 
   return (
     <div className={cn(mode, 'rounded-card border border-default bg-background p-5 md:p-8')}>
@@ -148,20 +152,22 @@ export default function BlogPostPreviewPage() {
             DEV ONLY
           </span>
           <p className="text-body">
-            Layout preview for the Blog article detail template, using fixture data defined in
-            this file only. <code className="font-mono">lib/blog.ts</code> stays stubbed — see{' '}
+            Layout preview for the Blog article detail template, using fixture data defined in this
+            file only. <code className="font-mono">lib/blog.ts</code> stays stubbed — see{' '}
             <code className="font-mono">apps/web/CLAUDE.md</code>.
           </p>
         </div>
 
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div className="max-w-prose">
-            <h1 className="text-page font-semibold tracking-tight">Blog article template preview</h1>
+            <h1 className="text-page font-semibold tracking-tight">
+              Blog article template preview
+            </h1>
             <p className="mt-3 text-body-lg text-secondary">
               One obviously fictional fixture article exercising the title, byline (real founder
-              identity, fictional everything else), computed reading time, featured image, table
-              of contents, article body with a code block, share links and related articles —
-              rendered in both themes.
+              identity, fictional everything else), computed reading time, featured image, table of
+              contents, article body with a code block, share links and related articles — rendered
+              in both themes.
             </p>
           </div>
           <ThemeToggle />

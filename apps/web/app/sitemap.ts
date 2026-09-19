@@ -6,6 +6,7 @@ import { PUBLIC_ROUTES } from '@/lib/routes';
 import { caseStudies } from '@/config/case-studies';
 import { projects } from '@/config/projects';
 import { services } from '@/config/services';
+import { solutions } from '@/config/solutions';
 
 // Blog posts come from the database, so the sitemap is built per request: a statically generated
 // one would omit posts published after the build, and would need database access at build time.
@@ -27,6 +28,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url: new URL(`/services/${service.slug}`, env.NEXT_PUBLIC_SITE_URL).toString(),
     changeFrequency: 'monthly' as const,
     priority: 0.7,
+  }));
+
+  // Every solution has a detail page (solutions/[slug]/page.tsx builds all of `solutions`,
+  // unfiltered) — same pattern as serviceRoutes above.
+  const solutionRoutes = solutions.map((solution) => ({
+    url: new URL(`/solutions/${solution.slug}`, env.NEXT_PUBLIC_SITE_URL).toString(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
   }));
 
   // Only projects with a real case study get a page — same intersection
@@ -53,5 +62,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  return [...staticRoutes, ...serviceRoutes, ...portfolioRoutes, ...postRoutes];
+  return [...staticRoutes, ...serviceRoutes, ...solutionRoutes, ...portfolioRoutes, ...postRoutes];
 }

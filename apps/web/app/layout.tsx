@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 
 import { ThemeProvider } from '@/components/layout/ThemeProvider';
 import { company } from '@/config/company';
+import { DEFAULT_SHARE_IMAGE } from '@/lib/blogImage';
 import { cn } from '@/lib/cn';
 import { env } from '@/lib/env';
 import { themeInitScript } from '@/lib/theme';
@@ -40,12 +41,17 @@ export const metadata: Metadata = {
     title: company.legalName,
     description,
     locale: 'en',
+    images: [DEFAULT_SHARE_IMAGE],
   },
   twitter: {
     card: 'summary_large_image',
     title: company.legalName,
     description,
+    images: [DEFAULT_SHARE_IMAGE],
   },
+  // Renders a google-site-verification meta tag only once a real Search Console code exists
+  // (CLAUDE.md 22.1 — the domain itself is still unresolved). Omitted entirely when unset.
+  verification: env.GOOGLE_SITE_VERIFICATION ? { google: env.GOOGLE_SITE_VERIFICATION } : undefined,
 };
 
 export const viewport: Viewport = {
@@ -59,6 +65,7 @@ const organizationJsonLd = {
   '@type': 'Organization',
   name: company.legalName,
   url: env.NEXT_PUBLIC_SITE_URL,
+  logo: `${env.NEXT_PUBLIC_SITE_URL}/brand/nexastack-mark.png`,
   founder: {
     '@type': 'Person',
     name: company.founder.name,

@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import { ContactDetails } from '@/components/sections/ContactDetails';
 import { ContactForm } from '@/components/sections/ContactForm';
+import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
 import { company } from '@/config/company';
 import { navigationActions } from '@/config/navigation';
@@ -33,14 +34,19 @@ export default function ContactPage() {
     <>
       <section aria-labelledby="contact-heading" className="bg-background">
         <div className="page-container section-y">
-          <ScrollReveal>
+          <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Contact' }]} />
+
+          <ScrollReveal className="mt-8">
             <div className="mx-auto max-w-2xl text-center">
-              <h1 id="contact-heading" className="text-page font-semibold tracking-tight text-primary">
+              <h1
+                id="contact-heading"
+                className="text-page font-semibold tracking-tight text-primary"
+              >
                 Contact
               </h1>
               <p className="mt-4 text-body-lg text-secondary">
-                Have a question or a general inquiry? Send us a message below.
-                Already know the project you want to build?{' '}
+                Have a question or a general inquiry? Send us a message below. Already know the
+                project you want to build?{' '}
                 <Link
                   href={navigationActions.quote.href}
                   className="text-primary-blue underline underline-offset-4 hover:text-primary-blue-hover"

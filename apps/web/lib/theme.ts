@@ -30,10 +30,17 @@ export function isTheme(value: unknown): value is Theme {
  * Inlined in <head> by the root layout. Runs before first paint so the correct theme class is
  * on <html> before any content renders. Must stay dependency-free, ES5-safe and fail silently
  * (e.g. when storage is blocked).
+ *
+ * The storage read is caught on its own: if `localStorage` throws (blocked storage, a private-
+ * mode quirk), `stored` just stays null and `theme` falls through to 'system' — the OS-preference
+ * check and class application below still run. An earlier version caught the whole block in one
+ * try, so a thrown storage read skipped class application entirely and the page rendered light
+ * regardless of the OS preference until React's ThemeProvider corrected it after hydration.
  */
 export const themeInitScript = `(function () {
   try {
-    var stored = window.localStorage.getItem('${THEME_STORAGE_KEY}');
+    var stored = null;
+    try { stored = window.localStorage.getItem('${THEME_STORAGE_KEY}'); } catch (e) {}
     var theme = stored === 'light' || stored === 'dark' ? stored : 'system';
     var dark = theme === 'dark' ||
       (theme === 'system' && window.matchMedia('${DARK_MEDIA_QUERY}').matches);

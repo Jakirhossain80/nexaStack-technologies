@@ -5,7 +5,7 @@ import { ArticleView } from '@/components/sections/ArticleView';
 import { company } from '@/config/company';
 import { env } from '@/lib/env';
 import { getPost, getRelatedPosts } from '@/lib/blog';
-import { shareImage } from '@/lib/blogImage';
+import { DEFAULT_SHARE_IMAGE, shareImage } from '@/lib/blogImage';
 
 // Article detail template for `/blog/[slug]`, reading published posts from MongoDB through
 // `lib/blog.ts`. The layout itself lives in `ArticleView`, which the admin preview also renders,
@@ -38,9 +38,10 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   if (!post) return {};
 
   const url = `${env.NEXT_PUBLIC_SITE_URL}/blog/${post.slug}`;
-  // A site path or a Media Library image; see `lib/blogImage.ts` for why this is not a plain concatenation.
-  const share = shareImage(post.coverImage, env.NEXT_PUBLIC_SITE_URL);
-  const images = share ? [share] : undefined;
+  // A site path or a Media Library image; see `lib/blogImage.ts` for why this is not a plain
+  // concatenation. Falls back to the sitewide default rather than sharing with no image at all.
+  const share = shareImage(post.coverImage, env.NEXT_PUBLIC_SITE_URL) ?? DEFAULT_SHARE_IMAGE;
+  const images = [share];
 
   return {
     title: post.title,

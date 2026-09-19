@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { QuotationWizard } from '@/components/sections/QuotationWizard';
+import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { env } from '@/lib/env';
 
 export const metadata: Metadata = {
@@ -29,13 +30,18 @@ export default function QuotationPage() {
     <>
       <section aria-labelledby="quotation-heading" className="bg-background">
         <div className="page-container section-y">
-          <div className="mx-auto max-w-2xl text-center">
-            <h1 id="quotation-heading" className="text-page font-semibold tracking-tight text-primary">
+          <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Get a Quote' }]} />
+
+          <div className="mx-auto mt-8 max-w-2xl text-center">
+            <h1
+              id="quotation-heading"
+              className="text-page font-semibold tracking-tight text-primary"
+            >
               Request a Quote
             </h1>
             <p className="mt-4 text-body-lg text-secondary">
-              Tell us about your project in five short steps. We&rsquo;ll review your request and get
-              back to you.
+              Tell us about your project in five short steps. We&rsquo;ll review your request and
+              get back to you.
             </p>
           </div>
 
