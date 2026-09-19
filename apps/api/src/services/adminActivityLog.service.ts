@@ -1,5 +1,10 @@
-import type { Types } from 'mongoose';
+import type { AdminAuditEntry, Paginated, Role } from '@nexastack/shared';
+import mongoose, { type Types } from 'mongoose';
 
+import { adminEmailsById } from '../lib/adminEmails.js';
+import { dhakaDayRange } from '../lib/auditDates.js';
+import { summarizeAdminEvent } from '../lib/auditSummary.js';
+import { skipFor, toPaginated } from '../lib/listQuery.js';
 import { logger } from '../lib/logger.js';
 import { AdminActivityLog, type AdminActivityEventType } from '../models/AdminActivityLog.js';
 
@@ -32,6 +37,7 @@ export async function logAdminActivity(input: LogAdminActivityInput): Promise<vo
  * services take it as a plain value and never touch `req`/`res`. */
 export interface AdminActionContext {
   adminId: string;
+  role: Role;
   ipAddress: string;
   userAgent: string | undefined;
 }
@@ -88,4 +94,65 @@ export async function listRecentAdminActivity(
     userAgent: entry.userAgent ?? undefined,
     createdAt: entry.createdAt as Date,
   }));
+}
+
+export interface AuditFilter {
+  event?: AdminActivityEventType | undefined;
+  /** `YYYY-MM-DD`, a day in Asia/Dhaka (see `lib/auditDates.ts`). */
+  from?: string | undefined;
+  to?: string | undefined;
+}
+
+/**
+ * The audit view's data: newest first, filtered by event type and/or date range IN THE DATABASE query,
+ * paginated. Each row names the admin who acted (one batched lookup for the page), and account events
+ * carry a short summary. `.lean()`: display-only.
+ */
+export async function queryAdminActivity(
+  filter: AuditFilter,
+  page: number,
+  limit: number,
+): Promise<Paginated<AdminAuditEntry>> {
+  const mongoFilter: Record<string, unknown> = {};
+  if (filter.event) mongoFilter.eventType = filter.event;
+
+  const range = dhakaDayRange(filter.from, filter.to);
+  if (range.gte || range.lte) {
+    // `trusted`: `sanitizeFilter` would otherwise turn `$gte`/`$lte` into `$eq`. The operands are Dates
+    // built from a validated `YYYY-MM-DD`, never raw request objects.
+    mongoFilter.createdAt = mongoose.trusted({
+      ...(range.gte ? { $gte: range.gte } : {}),
+      ...(range.lte ? { $lte: range.lte } : {}),
+    });
+  }
+
+  const [docs, total] = await Promise.all([
+    AdminActivityLog.find(mongoFilter)
+      .sort({ createdAt: -1, _id: -1 })
+      .skip(skipFor(page, limit))
+      .limit(limit)
+      .lean(),
+    AdminActivityLog.countDocuments(mongoFilter),
+  ]);
+
+  const emails = await adminEmailsById(
+    docs.flatMap((doc) => (doc.adminUserId ? [String(doc.adminUserId)] : [])),
+  );
+
+  const items = docs.map(
+    (doc): AdminAuditEntry => ({
+      id: String(doc._id),
+      eventType: doc.eventType as AdminActivityEventType,
+      actorEmail: doc.adminUserId ? (emails.get(String(doc.adminUserId)) ?? null) : null,
+      attemptedEmail: doc.attemptedEmail ?? undefined,
+      ipAddress: doc.ipAddress ?? undefined,
+      summary: summarizeAdminEvent(
+        doc.eventType,
+        (doc.metadata ?? undefined) as Record<string, unknown> | undefined,
+      ),
+      createdAt: (doc.createdAt as Date).toISOString(),
+    }),
+  );
+
+  return toPaginated(items, total, page, limit);
 }

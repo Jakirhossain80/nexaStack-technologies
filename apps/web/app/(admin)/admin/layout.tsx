@@ -18,7 +18,7 @@ export interface AdminLayoutProps {
  * `app/(admin)/admin/(protected)/layout.tsx` — `/admin/login`, `/admin/forgot-password` and
  * `/admin/reset-password` sit outside that nested group specifically so they're reachable
  * without a session. This is a UX guard only; authorisation is always re-enforced by
- * `requireSession`/`requireRole` on the API route itself, never by the UI alone.
+ * `requireSession`/`requirePermission` on the API route itself, never by the UI alone.
  */
 export default function AdminLayout({ children }: Readonly<AdminLayoutProps>) {
   return <main id="main-content">{children}</main>;

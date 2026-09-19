@@ -5,6 +5,7 @@ import { adminBlogRouter } from './adminBlog.routes.js';
 import { adminEnquiriesRouter } from './adminEnquiries.routes.js';
 import { adminMediaRouter } from './adminMedia.routes.js';
 import { adminQuotationsRouter } from './adminQuotations.routes.js';
+import { adminUsersRouter } from './adminUsers.routes.js';
 import { authRouter } from './auth.routes.js';
 import { contactRouter } from './contact.routes.js';
 import { healthRouter } from './health.routes.js';
@@ -24,6 +25,9 @@ v1Router.use('/admin/quotations', adminQuotationsRouter);
 // Media Library: same reasoning, and its upload routes carry multipart bodies the general router's
 // JSON-only handling was never meant for.
 v1Router.use('/admin/media', adminMediaRouter);
+// Admin-account management: only `manage:admins` (super_admin). Mounted before `adminRouter` for the
+// same reason as the others.
+v1Router.use('/admin/users', adminUsersRouter);
 v1Router.use('/admin', adminRouter);
 
 export const router = Router();

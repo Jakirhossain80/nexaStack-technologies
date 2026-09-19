@@ -4,13 +4,14 @@ import { BlogPostForm } from '@/components/admin/blog/BlogPostForm';
 import { ContentEditorHeader } from '@/components/admin/content/ContentEditorHeader';
 import { LoadError } from '@/components/admin/content/LoadError';
 import { getBlogCategories } from '@/lib/adminBlog.server';
+import { can, getAdminSession } from '@/lib/adminSession.server';
 
 export const metadata: Metadata = {
   title: 'New blog post',
 };
 
 export default async function NewBlogPostPage() {
-  const categories = await getBlogCategories();
+  const [categories, admin] = await Promise.all([getBlogCategories(), getAdminSession()]);
 
   return (
     <div>
@@ -22,7 +23,11 @@ export default async function NewBlogPostPage() {
       />
       <div className="mt-8">
         {categories.ok ? (
-          <BlogPostForm categories={categories.data} />
+          <BlogPostForm
+            categories={categories.data}
+            canPublish={can(admin, 'content:publish')}
+            canDelete={can(admin, 'content:delete')}
+          />
         ) : (
           <LoadError
             subject="the categories"

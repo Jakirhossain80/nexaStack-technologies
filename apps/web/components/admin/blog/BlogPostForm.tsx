@@ -30,6 +30,13 @@ export interface BlogPostFormProps {
   categories: readonly BlogCategoryAdmin[];
   /** Omit to create a new post. */
   post?: BlogPostAdminDetail;
+  /**
+   * What this admin may do, decided on the server from their role. `canPublish` (`content:publish`)
+   * covers every status change and editing a post that is no longer a draft; `canDelete`
+   * (`content:delete`) covers deleting. Hiding what a role cannot do is a courtesy: the API refuses it.
+   */
+  canPublish: boolean;
+  canDelete: boolean;
 }
 
 interface PostFormFields {
@@ -93,7 +100,7 @@ function parseTags(text: string): string[] {
  * `StatusActionBar`, and are disabled while there are unsaved edits so a click can never publish
  * something other than what is on screen.
  */
-export function BlogPostForm({ categories, post }: BlogPostFormProps) {
+export function BlogPostForm({ categories, post, canPublish, canDelete }: BlogPostFormProps) {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
@@ -109,6 +116,10 @@ export function BlogPostForm({ categories, post }: BlogPostFormProps) {
   const isEditing = post !== undefined;
   const isArchived = post?.status === CONTENT_STATUS.ARCHIVED;
   const slugLocked = Boolean(post?.publishedAt);
+  // A role without `content:publish` (a content editor) edits DRAFTS only: changing a post that is live,
+  // unpublished or archived is publishing work. The API enforces the same rule.
+  const lockedForRole = isEditing && !canPublish && post.status !== CONTENT_STATUS.DRAFT;
+  const isReadOnly = isArchived || lockedForRole;
 
   const {
     register,
@@ -234,15 +245,22 @@ export function BlogPostForm({ categories, post }: BlogPostFormProps) {
             Publishing
           </h2>
           <div className="mt-4 space-y-4">
-            <StatusActionBar
-              status={post.status}
-              statusUrl={`${BLOG_API}/posts/${post.id}/status`}
-              disabledReason={
-                isDirty
-                  ? 'You have unsaved changes. Save them before changing the status.'
-                  : undefined
-              }
-            />
+            {canPublish ? (
+              <StatusActionBar
+                status={post.status}
+                statusUrl={`${BLOG_API}/posts/${post.id}/status`}
+                disabledReason={
+                  isDirty
+                    ? 'You have unsaved changes. Save them before changing the status.'
+                    : undefined
+                }
+              />
+            ) : (
+              <p className="text-body text-secondary">
+                Your role can write and edit drafts. Publishing, unpublishing, archiving and
+                deleting are done by an admin.
+              </p>
+            )}
             <div className="flex flex-wrap items-center gap-3 border-t border-default pt-4">
               <Button
                 href={`/admin/blog/${post.id}/preview`}
@@ -253,7 +271,7 @@ export function BlogPostForm({ categories, post }: BlogPostFormProps) {
                 Preview
                 <span className="sr-only"> (opens in a new tab; shows the last saved version)</span>
               </Button>
-              {(post.status === CONTENT_STATUS.DRAFT || isArchived) && (
+              {canDelete && (post.status === CONTENT_STATUS.DRAFT || isArchived) && (
                 <ConfirmDeleteButton
                   url={`${BLOG_API}/posts/${post.id}`}
                   itemLabel="post"
@@ -266,7 +284,17 @@ export function BlogPostForm({ categories, post }: BlogPostFormProps) {
         </section>
       )}
 
-      {isArchived && (
+      {lockedForRole && (
+        <p
+          role="note"
+          className="rounded-field border border-strong bg-surface px-4 py-3 text-body text-primary"
+        >
+          This post is {post.status}, and your role can only edit drafts because changing it would
+          change the public site. Ask an admin to make the change.
+        </p>
+      )}
+
+      {isArchived && canPublish && (
         <p
           role="note"
           className="rounded-field border border-strong bg-surface px-4 py-3 text-body text-primary"
@@ -280,7 +308,7 @@ export function BlogPostForm({ categories, post }: BlogPostFormProps) {
         noValidate
         className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]"
       >
-        <fieldset disabled={isArchived} className="min-w-0 space-y-6">
+        <fieldset disabled={isReadOnly} className="min-w-0 space-y-6">
           <legend className="sr-only">Post content</legend>
 
           {serverError && (
@@ -375,7 +403,7 @@ export function BlogPostForm({ categories, post }: BlogPostFormProps) {
 
         <aside className="min-w-0 space-y-6">
           <fieldset
-            disabled={isArchived}
+            disabled={isReadOnly}
             className="space-y-6 rounded-card border border-default bg-surface p-4 md:p-5"
           >
             <legend className="px-1 text-card font-semibold text-primary">Details</legend>
@@ -501,7 +529,7 @@ export function BlogPostForm({ categories, post }: BlogPostFormProps) {
           </fieldset>
 
           <div>
-            <Button type="submit" disabled={isSubmitting || isArchived} className="w-full">
+            <Button type="submit" disabled={isSubmitting || isReadOnly} className="w-full">
               {isSubmitting ? 'Saving…' : saveLabel}
             </Button>
             {/* Always mounted so a screen reader announces "Saved." when it appears. */}

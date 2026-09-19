@@ -47,6 +47,19 @@ export const loginRateLimiter = makeLimiter(
   'Too many login attempts from your connection. Please wait 15 minutes and try again.',
 );
 
+/**
+ * Changing a password requires the CURRENT one, so this endpoint is a password-guessing surface for
+ * anyone holding a signed-in session (a walked-away-from browser). Same threshold as sign-in.
+ */
+export const CHANGE_PASSWORD_RATE_LIMIT = 5;
+
+export const changePasswordRateLimiter = makeLimiter(
+  'change-password',
+  CHANGE_PASSWORD_RATE_LIMIT,
+  FIFTEEN_MINUTES_MS,
+  'Too many password change attempts from your connection. Please wait 15 minutes and try again.',
+);
+
 export const passwordResetRequestRateLimiter = makeLimiter(
   'password-reset-request',
   PASSWORD_RESET_REQUEST_RATE_LIMIT,

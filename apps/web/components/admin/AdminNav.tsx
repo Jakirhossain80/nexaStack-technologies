@@ -1,29 +1,30 @@
 'use client';
 
+import type { Permission } from '@nexastack/shared';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { cn } from '@/lib/cn';
+import { visibleNavLinks } from '@/lib/adminNav';
 
-const LINKS = [
-  { href: '/admin', label: 'Dashboard' },
-  { href: '/admin/enquiries', label: 'Enquiries' },
-  { href: '/admin/quotations', label: 'Quotations' },
-  { href: '/admin/blog', label: 'Blog' },
-  { href: '/admin/media', label: 'Media' },
-] as const;
+export interface AdminNavProps {
+  /** What the signed-in admin may do (from the API). Decides which links are shown. */
+  permissions: readonly Permission[];
+}
 
 /**
- * Primary navigation for the admin shell. Deliberately small: a link per admin area that has a
- * page of its own, so there is a way between them and back to the dashboard. The current area is
- * marked with `aria-current` (and underlined, so it is not colour alone).
+ * Primary navigation for the admin shell. Deliberately small: a link per admin area that has a page of
+ * its own, so there is a way between them and back to the dashboard, and ONLY the areas this admin can
+ * use (see `lib/adminNav.ts`). That is a courtesy, not security: the API and each page enforce access
+ * regardless. The current area is marked with `aria-current` (and underlined, so it is not colour alone).
  */
-export function AdminNav() {
+export function AdminNav({ permissions }: AdminNavProps) {
   const pathname = usePathname();
+  const links = visibleNavLinks(permissions);
 
   return (
     <nav aria-label="Admin" className="flex flex-wrap items-center gap-1">
-      {LINKS.map((link) => {
+      {links.map((link) => {
         // The dashboard is exact; every other area owns its sub-paths.
         const active =
           link.href === '/admin' ? pathname === '/admin' : pathname.startsWith(link.href);

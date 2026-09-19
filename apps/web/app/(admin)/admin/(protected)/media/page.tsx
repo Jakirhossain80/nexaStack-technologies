@@ -8,6 +8,7 @@ import { MediaThumbnail } from '@/components/admin/media/MediaThumbnail';
 import { MediaUploadForm } from '@/components/admin/media/MediaUploadForm';
 import { Pagination } from '@/components/ui/Pagination';
 import { getMediaList } from '@/lib/adminMedia.server';
+import { can, getAdminSession } from '@/lib/adminSession.server';
 import { describeMedia } from '@/lib/mediaLabels';
 
 export const metadata: Metadata = {
@@ -33,9 +34,13 @@ const TYPE_FILTER = {
  * the API in the database query (root CLAUDE.md 12); the grid never filters a fetched list itself.
  * Every tile shows the file's name as real text (a document is not just an icon), and an image tile
  * shows the image with its own alt text.
+ *
+ * Everyone with the Media Library (`media:read`) can browse; the upload form needs `manage:media`, so a
+ * content editor sees the library read-only. The API enforces the same on the upload endpoint.
  */
 export default async function MediaPage({ searchParams }: MediaPageProps) {
   const params = await searchParams;
+  const canUpload = can(await getAdminSession(), 'manage:media');
 
   // The URL is untrusted: keep only well-formed values so a junk link shows an ordinary list rather
   // than an API validation error. The API re-validates everything regardless.
@@ -58,14 +63,19 @@ export default async function MediaPage({ searchParams }: MediaPageProps) {
       </p>
 
       {deleted && (
-        <p role="status" className="mt-6 rounded-field border border-default bg-surface px-4 py-3 text-body text-primary">
+        <p
+          role="status"
+          className="mt-6 rounded-field border border-default bg-surface px-4 py-3 text-body text-primary"
+        >
           Deleted &ldquo;{deleted}&rdquo; from the library and from Cloudinary.
         </p>
       )}
 
-      <div className="mt-8">
-        <MediaUploadForm />
-      </div>
+      {canUpload && (
+        <div className="mt-8">
+          <MediaUploadForm />
+        </div>
+      )}
 
       <ContentListFilters
         searchLabel="Search media"
@@ -77,7 +87,11 @@ export default async function MediaPage({ searchParams }: MediaPageProps) {
         <LoadError subject="the media library" status={result.status} message={result.message} />
       ) : result.data.items.length === 0 ? (
         <p className="mt-8 text-body text-secondary">
-          {isFiltered ? 'No files match your search or filter.' : 'No files yet. Upload the first one above.'}
+          {isFiltered
+            ? 'No files match your search or filter.'
+            : canUpload
+              ? 'No files yet. Upload the first one above.'
+              : 'No files yet.'}
         </p>
       ) : (
         <>
@@ -85,12 +99,15 @@ export default async function MediaPage({ searchParams }: MediaPageProps) {
             Showing {result.data.items.length} of {result.data.total}{' '}
             {result.data.total === 1 ? 'file' : 'files'}
           </p>
-          <ul aria-label="Media files" className="mt-3 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+          <ul
+            aria-label="Media files"
+            className="mt-3 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4"
+          >
             {result.data.items.map((item) => (
               <li key={item.id}>
                 <Link
                   href={`/admin/media/${item.id}`}
-                  className="flex h-full flex-col overflow-hidden rounded-card border border-default bg-surface transition duration-150 ease-out hover:border-default-hover hover:bg-surface-hover focus-ring"
+                  className="flex h-full flex-col overflow-hidden rounded-card border border-default bg-surface focus-ring transition duration-150 ease-out hover:border-default-hover hover:bg-surface-hover"
                 >
                   <MediaThumbnail
                     media={item}

@@ -1,3 +1,4 @@
+import { ADMIN_STATUS, ADMIN_STATUSES, ROLES } from '@nexastack/shared';
 import mongoose, { type InferSchemaType, type Model } from 'mongoose';
 
 // Named imports (`{ Schema, model, models }`) from 'mongoose' don't reliably resolve under
@@ -7,17 +8,28 @@ import mongoose, { type InferSchemaType, type Model } from 'mongoose';
 const { Schema, model, models } = mongoose;
 
 /**
- * The single admin account (root CLAUDE.md 22.2 — phase 2, not yet built out beyond auth).
- * Created only by `scripts/seed-admin.ts`, never through a public registration form.
+ * An admin account. The first one is created by `scripts/seed-admin.ts`; every later one only by a
+ * `super_admin` (`POST /api/v1/admin/users`). There is no public registration.
  *
  * `passwordHash` is `select: false` (root CLAUDE.md 11.5) — every query must opt in with
  * `.select('+passwordHash')` to read it, so an accidental `find()` elsewhere can never leak it.
+ *
+ * `status` and `mustChangePassword` were added by the Admin Roles task. Accounts created before that
+ * have neither field: a MISSING `status` means active and a missing `mustChangePassword` means false
+ * (Mongoose applies those defaults on read, and queries use `status: { $ne: 'suspended' }` rather than
+ * `status: 'active'`). `scripts/migrate-admin-users.ts` writes them explicitly.
  */
 const adminUserSchema = new Schema(
   {
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     passwordHash: { type: String, required: true, select: false },
-    role: { type: String, required: true, enum: ['super_admin', 'admin', 'content_editor'] },
+    role: { type: String, required: true, enum: ROLES },
+    // A suspended account cannot sign in, and every session it has is revoked when it is suspended.
+    status: { type: String, required: true, enum: ADMIN_STATUSES, default: ADMIN_STATUS.ACTIVE },
+    // True while the account still has the temporary password a super_admin gave it: the API refuses
+    // everything except changing the password (and signing out) until it is changed.
+    mustChangePassword: { type: Boolean, required: true, default: false },
+    createdByAdminId: { type: Schema.Types.ObjectId, ref: 'AdminUser' },
     lastLoginAt: { type: Date },
   },
   { timestamps: { createdAt: true, updatedAt: false } },

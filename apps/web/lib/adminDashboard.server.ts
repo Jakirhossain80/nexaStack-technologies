@@ -6,8 +6,7 @@ import { env } from '@/lib/env';
 import type { AdminActivityEntry } from './adminSession.server';
 
 /**
- * Same forwarded-cookie-fetch pattern as `adminSession.server.ts`'s `getAdminSession` /
- * `getRecentAdminActivity`: a Server Component can read the incoming request's cookies via
+ * Same forwarded-cookie-fetch pattern as `adminSession.server.ts`'s `getAdminSession`: a Server Component can read the incoming request's cookies via
  * `next/headers`, but a server-to-server `fetch()` does not attach them automatically, so
  * every helper below forwards the `Cookie` header explicitly. All return a safe empty value
  * (`null` / `[]`) rather than throwing on failure — including a 403 from a role this session
@@ -32,9 +31,10 @@ async function forwardedGet<T>(path: string): Promise<T | null> {
   }
 }
 
+/** A section is present only if this admin may see it: the API leaves out the ones their role lacks. */
 export interface DashboardStats {
-  contact: { total: number; new: number };
-  quotation: { total: number; new: number };
+  contact?: { total: number; new: number };
+  quotation?: { total: number; new: number };
 }
 
 /** `null` means "could not load" (not authenticated, not authorized, or the API is down) —

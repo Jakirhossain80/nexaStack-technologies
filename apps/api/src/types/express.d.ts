@@ -1,4 +1,4 @@
-import type { AuthenticatedAdmin } from '../services/auth.service.js';
+import type { AuthenticatedAdmin } from '@nexastack/shared';
 
 // Values parsed by the validate() middleware. Read them through the typed accessors in
 // middleware/validate.ts rather than directly.

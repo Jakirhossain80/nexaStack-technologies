@@ -1,7 +1,12 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loginSchema, type ApiResponse, type LoginInput } from '@nexastack/shared';
+import {
+  loginSchema,
+  type ApiResponse,
+  type AuthenticatedAdmin,
+  type LoginInput,
+} from '@nexastack/shared';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -47,14 +52,16 @@ export function LoginForm() {
         method: 'POST',
         body: JSON.stringify(data),
       });
-      const body = (await response.json()) as ApiResponse<{ admin: unknown }>;
+      const body = (await response.json()) as ApiResponse<{ admin: AuthenticatedAdmin }>;
 
       if (!body.success) {
         setServerError(body.error.message);
         return;
       }
 
-      router.push('/admin');
+      // An account still on its temporary password has nowhere else to go (the API refuses every
+      // other route), so send it straight to the change screen instead of bouncing off the layout.
+      router.push(body.data.admin.mustChangePassword ? '/admin/change-password' : '/admin');
       router.refresh();
     } catch {
       setServerError('Something went wrong signing in. Please check your connection and try again.');

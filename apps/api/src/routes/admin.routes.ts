@@ -1,22 +1,23 @@
 import { Router } from 'express';
 
 import * as dashboardController from '../controllers/adminDashboard.controller.js';
-import { requireRole } from '../middleware/requireRole.js';
+import { requireAnyPermission, requirePermission } from '../middleware/requirePermission.js';
 import { requireSession } from '../middleware/requireSession.js';
 import { validate } from '../middleware/validate.js';
 import { recentActivityQuerySchema } from '../schemas/adminSubmissions.js';
 
 /**
  * Dashboard-supporting endpoints for the admin landing page (Contact enquiries and quotation
- * requests have their own routers: adminEnquiries.routes.ts, adminQuotations.routes.ts). Every route requires a valid session *and* one of the two
- * roles the RBAC table in apps/api/CLAUDE.md section 5 scopes enquiries/quotations/media to
- * ('super_admin', 'admin') — not 'content_editor', which is blog/portfolio content only.
+ * requests have their own routers: adminEnquiries.routes.ts, adminQuotations.routes.ts). Every route
+ * requires a valid session and a named capability (see `ROLE_PERMISSIONS` in `@nexastack/shared`):
+ * the counts need one of `manage:enquiries` / `manage:quotations` (and the response only includes the
+ * sections the caller may see), and the activity feed needs `audit:view`.
  * No rate limiter: these are session-gated admin reads/writes, not public or auth-specific
  * endpoints (apps/api/CLAUDE.md section 8 reserves rate limiting for those).
  */
 export const adminRouter = Router();
 
-adminRouter.use(requireSession, requireRole('super_admin', 'admin'));
+adminRouter.use(requireSession);
 
 /**
  * @openapi
@@ -33,7 +34,11 @@ adminRouter.use(requireSession, requireRole('super_admin', 'admin'));
  *       401: { description: Not authenticated (UNAUTHENTICATED). }
  *       403: { description: Authenticated but not super_admin/admin (FORBIDDEN). }
  */
-adminRouter.get('/dashboard/stats', dashboardController.getStats);
+adminRouter.get(
+  '/dashboard/stats',
+  requireAnyPermission('manage:enquiries', 'manage:quotations'),
+  dashboardController.getStats,
+);
 
 /**
  * @openapi
@@ -47,6 +52,7 @@ adminRouter.get('/dashboard/stats', dashboardController.getStats);
  */
 adminRouter.get(
   '/activity/recent',
+  requirePermission('audit:view'),
   validate({ query: recentActivityQuerySchema }),
   dashboardController.getRecentActivity,
 );

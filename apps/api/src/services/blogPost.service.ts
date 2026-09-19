@@ -1,5 +1,6 @@
 import {
   CONTENT_STATUS,
+  hasPermission,
   type BlogPostAdminDetail,
   type BlogPostAdminSummary,
   type BlogPostInput,
@@ -11,7 +12,7 @@ import {
 import mongoose, { type Types } from 'mongoose';
 
 import { resolveCover, type CoverInput, type ResolvedCover } from '../lib/blogCover.js';
-import { ConflictError, NotFoundError, ValidationError } from '../lib/errors.js';
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../lib/errors.js';
 import { escapeRegex, skipFor, toPaginated } from '../lib/listQuery.js';
 import { renderMarkdown } from '../lib/markdown.js';
 import { findFreeSlug, slugify } from '../lib/slug.js';
@@ -227,6 +228,16 @@ export async function updatePost(
 ): Promise<BlogPostAdminDetail> {
   const post = await BlogPost.findById(id);
   if (!post) throw new NotFoundError('That post was not found. It may have been deleted.');
+
+  // Editing a post that is not a draft changes what the public sees (or would see once restored),
+  // which is exactly what publishing does. So it needs the same capability: a role that can create and
+  // edit but not publish (a content editor) may edit DRAFTS only. The route already required
+  // `content:edit`; this part depends on the post's status, so it is decided here.
+  if (post.status !== CONTENT_STATUS.DRAFT && !hasPermission(context.role, 'content:publish')) {
+    throw new ForbiddenError(
+      'You can edit drafts only. Changing a post that is live, unpublished or archived needs someone who can publish.',
+    );
+  }
 
   if (post.status === CONTENT_STATUS.ARCHIVED) {
     throw new ConflictError('This post is archived. Restore it to a draft before editing it.');

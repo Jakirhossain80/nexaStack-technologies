@@ -1,4 +1,5 @@
 import {
+  changePasswordSchema,
   loginSchema,
   passwordResetConfirmSchema,
   passwordResetRequestSchema,
@@ -6,9 +7,11 @@ import {
 import type { Request, Response } from 'express';
 
 import { clearedSessionCookieOptions, SESSION_COOKIE_NAME, sessionCookieOptions } from '../lib/cookies.js';
+import { UnauthenticatedError } from '../lib/errors.js';
 import { sendSuccess } from '../lib/respond.js';
-import { validatedBody } from '../middleware/validate.js';
-import { listRecentAdminActivity } from '../services/adminActivityLog.service.js';
+import { validatedBody, validatedQuery } from '../middleware/validate.js';
+import { auditLogQuerySchema } from '../schemas/adminAudit.js';
+import { queryAdminActivity } from '../services/adminActivityLog.service.js';
 import * as authService from '../services/auth.service.js';
 
 /** Never logged, never returned — just read once per request to build the audit context. */
@@ -55,8 +58,19 @@ export async function confirmPasswordReset(req: Request, res: Response): Promise
   sendSuccess(res, { reset: true }, 200);
 }
 
-/** Founder-only visibility into login/activity history — `/admin/activity`'s data source. */
+/**
+ * Changes the signed-in admin's own password: the forced first-login change and a voluntary one. The
+ * session making the request stays signed in; the account's others are revoked (see the service).
+ */
+export async function changePassword(req: Request, res: Response): Promise<void> {
+  if (!req.admin || !req.sessionId) throw new UnauthenticatedError();
+  const input = validatedBody(res, changePasswordSchema);
+  const admin = await authService.changePassword(req.admin, req.sessionId, input, requestContext(req));
+  sendSuccess(res, { admin }, 200);
+}
+
+/** The audit view's data source: filtered by event type and date, paginated. Needs `audit:view`. */
 export async function listActivity(_req: Request, res: Response): Promise<void> {
-  const entries = await listRecentAdminActivity();
-  sendSuccess(res, { entries }, 200);
+  const { page, limit, ...filter } = validatedQuery(res, auditLogQuerySchema);
+  sendSuccess(res, await queryAdminActivity(filter, page, limit), 200);
 }

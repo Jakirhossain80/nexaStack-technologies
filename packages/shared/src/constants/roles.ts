@@ -1,6 +1,9 @@
 import { z } from 'zod';
 
-/** Admin roles. Enforced by `requireRole` middleware in apps/api, never by the UI alone. */
+/**
+ * Admin roles. What each may do is the capability map in `permissions.ts`, enforced by
+ * `requirePermission` middleware in apps/api, never by the UI alone.
+ */
 export const ROLES = ['super_admin', 'admin', 'content_editor'] as const;
 
 export const roleSchema = z.enum(ROLES, {

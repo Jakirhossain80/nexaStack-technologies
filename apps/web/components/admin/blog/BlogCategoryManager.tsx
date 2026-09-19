@@ -9,6 +9,10 @@ import { adminRequest } from '@/lib/adminRequest';
 
 export interface BlogCategoryManagerProps {
   categories: readonly BlogCategoryAdmin[];
+  /** `content:publish`: renaming and reordering change the live public blog, so they are publishing work. */
+  canRearrange: boolean;
+  /** `content:delete`. */
+  canDelete: boolean;
 }
 
 /**
@@ -16,7 +20,11 @@ export interface BlogCategoryManagerProps {
  * keyboard- and screen-reader-operable with no library, and each move is announced. The order is
  * saved as a whole (`PUT …/categories/order`) and is what the public `/blog` category filter shows.
  */
-export function BlogCategoryManager({ categories }: BlogCategoryManagerProps) {
+export function BlogCategoryManager({
+  categories,
+  canRearrange,
+  canDelete,
+}: BlogCategoryManagerProps) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
@@ -79,6 +87,8 @@ export function BlogCategoryManager({ categories }: BlogCategoryManagerProps) {
             index={index}
             total={categories.length}
             busy={busy}
+            canRearrange={canRearrange}
+            canDelete={canDelete}
             onMove={(rowIndex, direction) => void move(rowIndex, direction)}
           />
         ))}

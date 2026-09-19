@@ -12,6 +12,7 @@ import { MediaThumbnail } from '@/components/admin/media/MediaThumbnail';
 import { MediaUrlRow } from '@/components/admin/media/MediaUrlRow';
 import { company } from '@/config/company';
 import { getMediaDetail, getMediaUsage } from '@/lib/adminMedia.server';
+import { can, getAdminSession } from '@/lib/adminSession.server';
 import { MEDIA_VARIANTS, withTransformation } from '@/lib/cloudinaryImage';
 import { describeMedia } from '@/lib/mediaLabels';
 
@@ -42,10 +43,18 @@ function isCloudinaryUrl(url: string): boolean {
  * One library item: a real preview, its alt text or description, its public URL (with a Copy button
  * and, for a resizable image, ready-made responsive and social-sharing sizes), and the two things
  * that change it: Replace and Delete.
+ *
+ * What is offered follows the role: editing the alt text or description and replacing the file need
+ * `manage:media`, deleting needs `media:delete`. A role with only `media:read` (a content editor) sees
+ * the same page read-only. The API refuses each of those changes to anyone without the capability.
  */
 export default async function MediaDetailPage({ params }: MediaDetailPageProps) {
   const { id } = await params;
   if (!OBJECT_ID_PATTERN.test(id)) notFound();
+
+  const admin = await getAdminSession();
+  const canManage = can(admin, 'manage:media');
+  const canDelete = can(admin, 'media:delete');
 
   const [result, usageResult] = await Promise.all([getMediaDetail(id), getMediaUsage(id)]);
   if (!result.ok && result.status === 404) notFound();
@@ -112,22 +121,41 @@ export default async function MediaDetailPage({ params }: MediaDetailPageProps) 
           <dl className="mt-6 space-y-3 text-body">
             <div>
               <dt className="text-label text-secondary">Cloudinary ID</dt>
-              <dd className="font-mono text-label break-all text-primary">{media.cloudinaryPublicId}</dd>
+              <dd className="font-mono text-label break-all text-primary">
+                {media.cloudinaryPublicId}
+              </dd>
             </div>
           </dl>
         </div>
 
         <div className="space-y-8">
-          <section aria-labelledby="describe-heading" className="rounded-card border border-default bg-surface p-5 sm:p-6">
+          <section
+            aria-labelledby="describe-heading"
+            className="rounded-card border border-default bg-surface p-5 sm:p-6"
+          >
             <h2 id="describe-heading" className="text-card font-semibold text-primary">
               {isImage ? 'Alt text' : 'Description'}
             </h2>
             <div className="mt-4">
-              <MediaEditForm media={media} />
+              {canManage ? (
+                <MediaEditForm media={media} />
+              ) : (
+                <>
+                  <p className="text-body break-words text-primary">
+                    {(isImage ? media.altText : media.description) || 'None written.'}
+                  </p>
+                  <p className="mt-2 text-label text-secondary">
+                    Your role can view this file but not change it.
+                  </p>
+                </>
+              )}
             </div>
           </section>
 
-          <section aria-labelledby="url-heading" className="rounded-card border border-default bg-surface p-5 sm:p-6">
+          <section
+            aria-labelledby="url-heading"
+            className="rounded-card border border-default bg-surface p-5 sm:p-6"
+          >
             <h2 id="url-heading" className="text-card font-semibold text-primary">
               Public URL
             </h2>
@@ -142,14 +170,17 @@ export default async function MediaDetailPage({ params }: MediaDetailPageProps) 
             </div>
           </section>
 
-          <section aria-labelledby="usedby-heading" className="rounded-card border border-default bg-surface p-5 sm:p-6">
+          <section
+            aria-labelledby="usedby-heading"
+            className="rounded-card border border-default bg-surface p-5 sm:p-6"
+          >
             <h2 id="usedby-heading" className="text-card font-semibold text-primary">
               Used by
             </h2>
             {!usageResult.ok ? (
               <p role="status" className="mt-2 text-body text-primary">
-                Could not check where this is used ({usageResult.message}). Deleting it is still blocked
-                if any post uses it.
+                Could not check where this is used ({usageResult.message}). Deleting it is still
+                blocked if any post uses it.
               </p>
             ) : usage.length === 0 ? (
               <p className="mt-2 text-body text-primary">
@@ -171,32 +202,42 @@ export default async function MediaDetailPage({ params }: MediaDetailPageProps) 
               </ul>
             )}
             <p className="mt-3 text-label text-secondary">
-              Only blog cover images are tracked, because they store this item&rsquo;s id. An address
-              typed into the site&rsquo;s configuration or a page is not; when you delete, a best-effort
-              check looks for those.
+              Only blog cover images are tracked, because they store this item&rsquo;s id. An
+              address typed into the site&rsquo;s configuration or a page is not; when you delete, a
+              best-effort check looks for those.
             </p>
           </section>
 
-          <section aria-labelledby="replace-heading" className="rounded-card border border-default bg-surface p-5 sm:p-6">
-            <h2 id="replace-heading" className="text-card font-semibold text-primary">
-              Replace
-            </h2>
-            <div className="mt-2">
-              <MediaReplaceForm media={media} />
-            </div>
-          </section>
+          {canManage && (
+            <section
+              aria-labelledby="replace-heading"
+              className="rounded-card border border-default bg-surface p-5 sm:p-6"
+            >
+              <h2 id="replace-heading" className="text-card font-semibold text-primary">
+                Replace
+              </h2>
+              <div className="mt-2">
+                <MediaReplaceForm media={media} />
+              </div>
+            </section>
+          )}
 
-          <section aria-labelledby="delete-heading" className="rounded-card border border-error bg-surface p-5 sm:p-6">
-            <h2 id="delete-heading" className="text-card font-semibold text-primary">
-              Delete
-            </h2>
-            <p className="mt-1 mb-4 text-label text-secondary">
-              {usage.length > 0
-                ? 'Blocked while a blog post uses this image as its cover.'
-                : 'Permanent. You will be asked to check where the file might be used and to type its name.'}
-            </p>
-            <MediaDeleteDialog media={media} usage={usage} />
-          </section>
+          {canDelete && (
+            <section
+              aria-labelledby="delete-heading"
+              className="rounded-card border border-error bg-surface p-5 sm:p-6"
+            >
+              <h2 id="delete-heading" className="text-card font-semibold text-primary">
+                Delete
+              </h2>
+              <p className="mt-1 mb-4 text-label text-secondary">
+                {usage.length > 0
+                  ? 'Blocked while a blog post uses this image as its cover.'
+                  : 'Permanent. You will be asked to check where the file might be used and to type its name.'}
+              </p>
+              <MediaDeleteDialog media={media} usage={usage} />
+            </section>
+          )}
         </div>
       </div>
     </div>

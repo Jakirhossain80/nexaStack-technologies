@@ -2,7 +2,18 @@
 
 // Schemas
 export { contactFormSchema, contactSchema } from './schemas/contact.js';
-export { loginSchema, passwordResetConfirmSchema, passwordResetRequestSchema } from './schemas/auth.js';
+export {
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  adminRoleChangeSchema,
+  adminStatusChangeSchema,
+  changePasswordFormSchema,
+  changePasswordSchema,
+  createAdminUserSchema,
+  loginSchema,
+  passwordResetConfirmSchema,
+  passwordResetRequestSchema,
+} from './schemas/auth.js';
 export {
   BLOG_BODY_MAX,
   BLOG_BODY_MIN,
@@ -64,7 +75,20 @@ export {
 } from './schemas/quotationAdmin.js';
 
 // Types
-export type { LoginInput, PasswordResetConfirmInput, PasswordResetRequestInput } from './types/auth.js';
+export type {
+  AdminRoleChangeInput,
+  AdminStatusChangeInput,
+  AdminUserAdmin,
+  AdminUserCreated,
+  AdminAuditEntry,
+  AuthenticatedAdmin,
+  ChangePasswordFormValues,
+  ChangePasswordInput,
+  CreateAdminUserInput,
+  LoginInput,
+  PasswordResetConfirmInput,
+  PasswordResetRequestInput,
+} from './types/auth.js';
 export type {
   BlogCategoryAdmin,
   BlogCategoryFormValues,
@@ -122,6 +146,23 @@ export type {
 
 // Constants
 export { ROLES, roleSchema, type Role } from './constants/roles.js';
+export {
+  PERMISSIONS,
+  ROLE_PERMISSIONS,
+  hasAnyPermission,
+  hasPermission,
+  permissionsFor,
+  type Permission,
+} from './constants/permissions.js';
+export { ADMIN_EVENT_TYPES, type AdminEventType } from './constants/adminEvents.js';
+export {
+  ADMIN_LOCK_MESSAGES,
+  ADMIN_STATUS,
+  ADMIN_STATUSES,
+  adminStatusSchema,
+  type AdminLockReason,
+  type AdminStatus,
+} from './constants/adminStatus.js';
 export {
   CONTENT_STATUS,
   CONTENT_STATUS_TRANSITIONS,

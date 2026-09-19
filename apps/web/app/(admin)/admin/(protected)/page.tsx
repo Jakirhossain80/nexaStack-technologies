@@ -10,6 +10,7 @@ import {
   getQuotationsNeedingAttention,
   getRecentActivity,
 } from '@/lib/adminDashboard.server';
+import { can, getAdminSession } from '@/lib/adminSession.server';
 import { getAllPosts } from '@/lib/blog';
 import { projects } from '@/config/projects';
 import { services } from '@/config/services';
@@ -23,7 +24,18 @@ export const metadata: Metadata = {
 const ATTENTION_LIMIT = 5;
 const ACTIVITY_LIMIT = 5;
 
+/**
+ * Everyone signed in sees the site-content counts. The enquiry and quotation cards and lists need
+ * `manage:enquiries` / `manage:quotations`, the recent-activity feed needs `audit:view`, and each quick
+ * action follows the capability of the page it links to. A section an admin cannot use is left out, not
+ * shown as "Not available", and the API is not asked for data it would refuse (it refuses regardless).
+ */
 export default async function AdminDashboardPage() {
+  const admin = await getAdminSession();
+  const canEnquiries = can(admin, 'manage:enquiries');
+  const canQuotations = can(admin, 'manage:quotations');
+  const canAudit = can(admin, 'audit:view');
+
   // Static/stubbed content: real config array lengths, computed here directly — no API
   // round-trip, since these already live in apps/web (root CLAUDE.md dashboard task, section 2).
   const servicesCount = services.length;
@@ -40,10 +52,10 @@ export default async function AdminDashboardPage() {
 
   // Dynamic, MongoDB-backed content — fetched from apps/api.
   const [stats, newEnquiries, newQuotations, activity] = await Promise.all([
-    getDashboardStats(),
-    getEnquiriesNeedingAttention(ATTENTION_LIMIT),
-    getQuotationsNeedingAttention(ATTENTION_LIMIT),
-    getRecentActivity(ACTIVITY_LIMIT),
+    canEnquiries || canQuotations ? getDashboardStats() : null,
+    canEnquiries ? getEnquiriesNeedingAttention(ATTENTION_LIMIT) : [],
+    canQuotations ? getQuotationsNeedingAttention(ATTENTION_LIMIT) : [],
+    canAudit ? getRecentActivity(ACTIVITY_LIMIT) : [],
   ]);
 
   return (
@@ -59,47 +71,61 @@ export default async function AdminDashboardPage() {
         <StatCard label="Total projects" value={projectsCount} />
         <StatCard label="Technology categories" value={technologyCategoriesCount} />
         <StatCard label="Published blog posts" value={blogPostsCount} />
-        <StatCard
-          label="New contact enquiries"
-          value={stats ? stats.contact.new : 'Not available'}
-        />
-        <StatCard
-          label="New quotation requests"
-          value={stats ? stats.quotation.new : 'Not available'}
-        />
+        {canEnquiries && (
+          <StatCard
+            label="New contact enquiries"
+            value={stats?.contact ? stats.contact.new : 'Not available'}
+          />
+        )}
+        {canQuotations && (
+          <StatCard
+            label="New quotation requests"
+            value={stats?.quotation ? stats.quotation.new : 'Not available'}
+          />
+        )}
       </dl>
 
-      <section className="mt-10">
-        <h2 className="text-card font-semibold text-primary">Content requiring attention</h2>
-        <p className="mt-1 text-label text-secondary">
-          The most recent unaddressed enquiries and quotation requests.
-        </p>
-        <div className="mt-4">
-          <AttentionList enquiries={newEnquiries} quotations={newQuotations} />
-        </div>
-      </section>
+      {(canEnquiries || canQuotations) && (
+        <section className="mt-10">
+          <h2 className="text-card font-semibold text-primary">Content requiring attention</h2>
+          <p className="mt-1 text-label text-secondary">
+            The most recent unaddressed enquiries and quotation requests.
+          </p>
+          <div className="mt-4">
+            <AttentionList enquiries={newEnquiries} quotations={newQuotations} />
+          </div>
+        </section>
+      )}
 
-      <section className="mt-10">
-        <h2 className="text-card font-semibold text-primary">Recent administrative activity</h2>
-        <p className="mt-1 text-label text-secondary">
-          The most recent sign-in and password-reset events.
-        </p>
-        <div className="mt-4">
-          <ActivityFeed entries={activity} />
-        </div>
-      </section>
+      {canAudit && (
+        <section className="mt-10">
+          <h2 className="text-card font-semibold text-primary">Recent administrative activity</h2>
+          <p className="mt-1 text-label text-secondary">
+            The most recent sign-in and password-reset events.
+          </p>
+          <div className="mt-4">
+            <ActivityFeed entries={activity} />
+          </div>
+        </section>
+      )}
 
-      <section className="mt-10">
-        <h2 className="text-card font-semibold text-primary">Quick actions</h2>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <Button href="/admin/enquiries?status=new" variant="secondary">
-            View new enquiries
-          </Button>
-          <Button href="/admin/quotations?status=new" variant="secondary">
-            View new quotation requests
-          </Button>
-        </div>
-      </section>
+      {(canEnquiries || canQuotations) && (
+        <section className="mt-10">
+          <h2 className="text-card font-semibold text-primary">Quick actions</h2>
+          <div className="mt-4 flex flex-wrap gap-3">
+            {canEnquiries && (
+              <Button href="/admin/enquiries?status=new" variant="secondary">
+                View new enquiries
+              </Button>
+            )}
+            {canQuotations && (
+              <Button href="/admin/quotations?status=new" variant="secondary">
+                View new quotation requests
+              </Button>
+            )}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

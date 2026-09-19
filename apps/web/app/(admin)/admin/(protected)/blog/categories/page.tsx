@@ -5,13 +5,14 @@ import { BlogCategoryCreateForm } from '@/components/admin/blog/BlogCategoryCrea
 import { BlogCategoryManager } from '@/components/admin/blog/BlogCategoryManager';
 import { LoadError } from '@/components/admin/content/LoadError';
 import { getBlogCategories } from '@/lib/adminBlog.server';
+import { can, getAdminSession } from '@/lib/adminSession.server';
 
 export const metadata: Metadata = {
   title: 'Blog categories',
 };
 
 export default async function BlogCategoriesPage() {
-  const categories = await getBlogCategories();
+  const [categories, admin] = await Promise.all([getBlogCategories(), getAdminSession()]);
 
   return (
     <div>
@@ -30,7 +31,11 @@ export default async function BlogCategoriesPage() {
       </div>
 
       {categories.ok ? (
-        <BlogCategoryManager categories={categories.data} />
+        <BlogCategoryManager
+          categories={categories.data}
+          canRearrange={can(admin, 'content:publish')}
+          canDelete={can(admin, 'content:delete')}
+        />
       ) : (
         <LoadError
           subject="the categories"

@@ -15,11 +15,23 @@ export interface BlogCategoryRowProps {
   index: number;
   total: number;
   busy: boolean;
+  /** Rename and move up/down (`content:publish`). Hidden, not disabled, for a role without it. */
+  canRearrange: boolean;
+  /** Delete (`content:delete`). */
+  canDelete: boolean;
   onMove: (index: number, direction: -1 | 1) => void;
 }
 
 /** One category in the manager: its name and post count, rename, move up/down and delete. */
-export function BlogCategoryRow({ category, index, total, busy, onMove }: BlogCategoryRowProps) {
+export function BlogCategoryRow({
+  category,
+  index,
+  total,
+  busy,
+  canRearrange,
+  canDelete,
+  onMove,
+}: BlogCategoryRowProps) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(category.name);
@@ -97,43 +109,49 @@ export function BlogCategoryRow({ category, index, total, busy, onMove }: BlogCa
           )}
         </div>
 
-        {!editing && (
+        {!editing && (canRearrange || canDelete) && (
           <div className="flex flex-wrap items-center gap-2 lg:shrink-0">
-            <Button
-              variant="secondary"
-              disabled={busy || index === 0}
-              onClick={() => onMove(index, -1)}
-              aria-label={`Move ${category.name} up`}
-            >
-              <span aria-hidden="true">↑</span> Up
-            </Button>
-            <Button
-              variant="secondary"
-              disabled={busy || index === total - 1}
-              onClick={() => onMove(index, 1)}
-              aria-label={`Move ${category.name} down`}
-            >
-              <span aria-hidden="true">↓</span> Down
-            </Button>
-            <Button
-              variant="secondary"
-              disabled={busy}
-              onClick={() => setEditing(true)}
-              aria-label={`Rename ${category.name}`}
-            >
-              Rename
-            </Button>
-            <ConfirmDeleteButton
-              url={`/api/v1/admin/blog/categories/${category.id}`}
-              itemLabel="category"
-              disabled={busy || inUse}
-              label="Delete"
-            />
+            {canRearrange && (
+              <>
+                <Button
+                  variant="secondary"
+                  disabled={busy || index === 0}
+                  onClick={() => onMove(index, -1)}
+                  aria-label={`Move ${category.name} up`}
+                >
+                  <span aria-hidden="true">↑</span> Up
+                </Button>
+                <Button
+                  variant="secondary"
+                  disabled={busy || index === total - 1}
+                  onClick={() => onMove(index, 1)}
+                  aria-label={`Move ${category.name} down`}
+                >
+                  <span aria-hidden="true">↓</span> Down
+                </Button>
+                <Button
+                  variant="secondary"
+                  disabled={busy}
+                  onClick={() => setEditing(true)}
+                  aria-label={`Rename ${category.name}`}
+                >
+                  Rename
+                </Button>
+              </>
+            )}
+            {canDelete && (
+              <ConfirmDeleteButton
+                url={`/api/v1/admin/blog/categories/${category.id}`}
+                itemLabel="category"
+                disabled={busy || inUse}
+                label="Delete"
+              />
+            )}
           </div>
         )}
       </div>
 
-      {!editing && inUse && (
+      {!editing && canDelete && inUse && (
         <p className="mt-3 text-label text-secondary">
           In use by {category.postCount} {category.postCount === 1 ? 'post' : 'posts'}; move{' '}
           {category.postCount === 1 ? 'it' : 'them'} to another category to delete this one.

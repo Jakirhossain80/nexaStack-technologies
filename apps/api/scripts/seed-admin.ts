@@ -48,7 +48,15 @@ async function main(): Promise<void> {
     }
 
     const passwordHash = await hashPassword(password);
-    const created = await AdminUser.create({ email, passwordHash, role: 'super_admin' });
+    // The first account picked its own password, so it is not forced to change it. Every account created
+    // after this one is made by a super_admin through `/admin/users` and IS.
+    const created = await AdminUser.create({
+      email,
+      passwordHash,
+      role: 'super_admin',
+      status: 'active',
+      mustChangePassword: false,
+    });
     logger.info({ email: created.email, role: created.role }, 'Seeded the admin account.');
   } finally {
     await mongoose.disconnect();

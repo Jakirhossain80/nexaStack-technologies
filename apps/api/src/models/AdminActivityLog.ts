@@ -1,3 +1,4 @@
+import { ADMIN_EVENT_TYPES, type AdminEventType } from '@nexastack/shared';
 import mongoose, { type InferSchemaType, type Model } from 'mongoose';
 
 // See AdminUser.ts's comment: named imports from 'mongoose' don't reliably resolve under
@@ -10,47 +11,15 @@ const { Schema, model, models } = mongoose;
  * is confirmed (wrong email, or a genuine mismatch) still needs to be logged, but there's no
  * real user to reference — `attemptedEmail` carries that case instead, and is never used to
  * imply that email belongs to a real account (see `auth.service.ts`'s generic-error handling).
+ *
+ * The list of events lives in `@nexastack/shared` (`ADMIN_EVENT_TYPES`), so the audit view's filter and
+ * its labels in the web app are built from the same list this model validates against.
  */
-const EVENT_TYPES = [
-  'login_success',
-  'login_failure',
-  'logout',
-  'password_reset_requested',
-  'password_reset_completed',
-  'blog_post_created',
-  'blog_post_updated',
-  'blog_post_published',
-  'blog_post_unpublished',
-  'blog_post_archived',
-  'blog_post_restored',
-  'blog_post_deleted',
-  'blog_category_created',
-  'blog_category_updated',
-  'blog_category_reordered',
-  'blog_category_deleted',
-  'enquiry_marked_read',
-  'enquiry_status_changed',
-  'enquiry_note_added',
-  'enquiry_archived',
-  'enquiry_unarchived',
-  'enquiry_exported',
-  'quotation_status_changed',
-  'quotation_note_added',
-  'quotation_archived',
-  'quotation_unarchived',
-  'quotation_exported',
-  'quotation_attachment_downloaded',
-  'media_uploaded',
-  'media_updated',
-  'media_replaced',
-  'media_deleted',
-] as const;
-
 const adminActivityLogSchema = new Schema(
   {
     adminUserId: { type: Schema.Types.ObjectId, ref: 'AdminUser', default: null },
     attemptedEmail: { type: String, trim: true, lowercase: true },
-    eventType: { type: String, required: true, enum: EVENT_TYPES },
+    eventType: { type: String, required: true, enum: ADMIN_EVENT_TYPES },
     ipAddress: { type: String },
     userAgent: { type: String },
     // Structured, extensible — deliberately untyped beyond "an object" so a future admin
@@ -66,7 +35,7 @@ adminActivityLogSchema.index({ createdAt: -1 });
 adminActivityLogSchema.index({ adminUserId: 1, createdAt: -1 });
 
 export type AdminActivityLogDocument = InferSchemaType<typeof adminActivityLogSchema>;
-export type AdminActivityEventType = (typeof EVENT_TYPES)[number];
+export type AdminActivityEventType = AdminEventType;
 
 // Explicit Model<T> on both sides of `??` — see AdminUser.ts's comment for why.
 export const AdminActivityLog =

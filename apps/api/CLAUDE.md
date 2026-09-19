@@ -105,19 +105,39 @@ Client validation is convenience. **This is the security boundary.**
 
 Roles: `super_admin`, `admin`, `content_editor`.
 
-Enforced by `requireRole(...roles)` middleware **on the route**. Hiding a button in the UI
-is not authorisation. Every admin route carries an explicit role requirement.
+Access is decided by **named capabilities**, not role names. The one map is
+`ROLE_PERMISSIONS` in `packages/shared/src/constants/permissions.ts`; the API enforces it and the
+web app reads the same map to decide what to show. A route says what it needs with
+`requirePermission('manage:media')` (all listed) or `requireAnyPermission(...)` **on the route**;
+code outside that map never compares a role string. Hiding a button in the UI is not authorisation.
+Every admin route carries an explicit permission requirement, and
+`routes/permissionGates.test.ts` fails if a route is added without one or a gate disagrees with the map.
 
-| Role | Permissions |
-|---|---|
-| `super_admin` | Everything, including user management |
-| `admin` | All content, enquiries, quotations, media |
-| `content_editor` | Blog and portfolio content only |
+| Capability | super_admin | admin | content_editor |
+|---|---|---|---|
+| `manage:admins` (create, role, suspend, reset) | yes | | |
+| `settings:manage` (reserved, no feature yet) | yes | | |
+| `manage:enquiries`, `manage:quotations` | yes | yes | |
+| `manage:media` (upload, edit, replace), `media:delete` | yes | yes | |
+| `media:read` | yes | yes | yes |
+| `content:create`, `content:edit` | yes | yes | yes (drafts only) |
+| `content:publish` (any status change; editing a non-draft) | yes | yes | |
+| `content:delete`, `audit:view` | yes | yes | |
+
+Adding a capability or a role means changing that one map; a new role fails typecheck until every
+capability is decided for it.
+
+Account lifecycle (`/api/v1/admin/users`, `manage:admins` only): accounts are created only by a
+`super_admin`, with a server-generated temporary password returned once and `mustChangePassword` set.
+While it is set, every route except `/auth/session`, `/auth/logout` and `/auth/change-password` answers
+403 `PASSWORD_CHANGE_REQUIRED`. Suspending an account revokes all its sessions at once, and a suspended
+account is also refused by `validateSession`. The last active `super_admin` can never be suspended or
+demoted, and nobody can suspend or change the role of their own account (`lib/adminSafeguards.ts`).
 
 ### Audit log
 
-Write an entry for: login, failed login, user creation/role change, content publish/delete,
-media delete, settings change. Record actor id, action, target, timestamp, IP.
+Write an entry for: login, failed login, user creation/role change/suspend/reactivate/password reset,
+password change, content publish/delete, media delete, settings change. Record actor id, action, target, timestamp, IP.
 
 ---
 
@@ -179,7 +199,7 @@ These are public and therefore the most exposed surface:
 
 - [ ] Zod validation on body, params, query
 - [ ] Auth middleware if not public
-- [ ] `requireRole` if admin
+- [ ] `requirePermission` if admin
 - [ ] Rate limit if public or auth-related
 - [ ] CSRF strategy applied for cookie-authenticated mutations
 - [ ] No sensitive fields in the response

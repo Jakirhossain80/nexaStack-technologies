@@ -3,7 +3,7 @@ import { Router } from 'express';
 
 import * as controller from '../controllers/adminMedia.controller.js';
 import { csrfProtection } from '../middleware/csrf.js';
-import { requireRole } from '../middleware/requireRole.js';
+import { requirePermission } from '../middleware/requirePermission.js';
 import { requireSession } from '../middleware/requireSession.js';
 import { validate } from '../middleware/validate.js';
 import { mediaListQuerySchema, mediaUpdateBodySchema } from '../schemas/adminMedia.js';
@@ -12,10 +12,10 @@ import { mongoIdParamSchema } from '../schemas/adminSubmissions.js';
 /**
  * Media Library, mounted at `/api/v1/admin/media` BEFORE `adminRouter` (see routes/index.ts).
  *
- * ROLES. Every change (upload, edit, replace, delete) is `super_admin` and `admin` only, per the RBAC
- * table in apps/api/CLAUDE.md section 5. READING (list, one item, where it is used) is also open to
- * `content_editor`, because a content editor writing a blog post must be able to pick a cover image
- * from the library; that role still cannot change or remove anything in it.
+ * PERMISSIONS (see `ROLE_PERMISSIONS` in `@nexastack/shared`). Reading the library (list, one item,
+ * where it is used) needs `media:read`, which every role has, so a content editor writing a blog post
+ * can pick a cover image. Upload, edit and replace need `manage:media`; delete needs `media:delete`.
+ * Today the last two are `super_admin` and `admin` only.
  *
  * Every mutation also passes `csrfProtection` (exact Origin + custom header). The two upload routes
  * take `multipart/form-data`, which `express.json` does not parse, so they carry no `validate({ body })`:
@@ -27,8 +27,9 @@ export const adminMediaRouter = Router();
 
 adminMediaRouter.use(requireSession);
 
-const canRead = requireRole('super_admin', 'admin', 'content_editor');
-const canWrite = requireRole('super_admin', 'admin');
+const canRead = requirePermission('media:read');
+const canManage = requirePermission('manage:media');
+const canDelete = requirePermission('media:delete');
 
 const idParams = { params: mongoIdParamSchema };
 
@@ -62,7 +63,7 @@ const idParams = { params: mongoIdParamSchema };
  *       503: { description: File storage is not configured or unavailable (SERVICE_UNAVAILABLE). }
  */
 adminMediaRouter.get('/', canRead, validate({ query: mediaListQuerySchema }), controller.listMedia);
-adminMediaRouter.post('/', canWrite, csrfProtection, controller.uploadMedia);
+adminMediaRouter.post('/', canManage, csrfProtection, controller.uploadMedia);
 
 /**
  * @openapi
@@ -115,14 +116,14 @@ adminMediaRouter.get('/:id/usage', canRead, validate(idParams), controller.getMe
 
 adminMediaRouter.patch(
   '/:id',
-  canWrite,
+  canManage,
   csrfProtection,
   validate({ ...idParams, body: mediaUpdateBodySchema }),
   controller.updateMedia,
 );
 adminMediaRouter.delete(
   '/:id',
-  canWrite,
+  canDelete,
   csrfProtection,
   validate({ ...idParams, body: mediaDeleteSchema }),
   controller.deleteMedia,
@@ -148,7 +149,7 @@ adminMediaRouter.delete(
  */
 adminMediaRouter.post(
   '/:id/replace',
-  canWrite,
+  canManage,
   csrfProtection,
   validate(idParams),
   controller.replaceMedia,

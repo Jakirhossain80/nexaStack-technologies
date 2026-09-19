@@ -3,7 +3,7 @@ import { Router } from 'express';
 
 import * as controller from '../controllers/adminQuotations.controller.js';
 import { csrfProtection } from '../middleware/csrf.js';
-import { requireRole } from '../middleware/requireRole.js';
+import { requirePermission } from '../middleware/requirePermission.js';
 import { requireSession } from '../middleware/requireSession.js';
 import { validate } from '../middleware/validate.js';
 import {
@@ -15,8 +15,8 @@ import { mongoIdParamSchema } from '../schemas/adminSubmissions.js';
 
 /**
  * Quotation-request management, mounted at `/api/v1/admin/quotations` BEFORE `adminRouter` (see
- * routes/index.ts). `super_admin` and `admin` only, per the RBAC table in apps/api/CLAUDE.md
- * section 5 (quotations are not `content_editor` content).
+ * routes/index.ts). Every route needs the `manage:quotations` capability (see `ROLE_PERMISSIONS` in
+ * `@nexastack/shared`; today `super_admin` and `admin`, not `content_editor`).
  *
  * Every mutation also passes `csrfProtection` (exact Origin + custom header). Reads do not need
  * it. `/export` is registered BEFORE `/:id` so "export" is never parsed as an id. No rate limiter,
@@ -24,7 +24,7 @@ import { mongoIdParamSchema } from '../schemas/adminSubmissions.js';
  */
 export const adminQuotationsRouter = Router();
 
-adminQuotationsRouter.use(requireSession, requireRole('super_admin', 'admin'));
+adminQuotationsRouter.use(requireSession, requirePermission('manage:quotations'));
 
 const idParams = { params: mongoIdParamSchema };
 

@@ -1,12 +1,21 @@
-import type { LoginInput, PasswordResetConfirmInput, PasswordResetRequestInput, Role } from '@nexastack/shared';
+import {
+  permissionsFor,
+  type AuthenticatedAdmin,
+  type ChangePasswordInput,
+  type LoginInput,
+  type PasswordResetConfirmInput,
+  type PasswordResetRequestInput,
+  type Role,
+} from '@nexastack/shared';
 import mongoose from 'mongoose';
 
 import { env } from '../config/env.js';
-import { UnauthenticatedError } from '../lib/errors.js';
+import { ForbiddenError, UnauthenticatedError, ValidationError } from '../lib/errors.js';
 import { signSessionToken } from '../lib/jwt.js';
 import { sendPasswordResetEmail } from '../lib/mailer.js';
 import { hashPassword, verifyPassword } from '../lib/password.js';
 import { generateRandomToken, hashToken } from '../lib/randomToken.js';
+import { evaluateSessionAccess } from '../lib/sessionAccess.js';
 import { PASSWORD_RESET_TOKEN_LIFETIME_MS, SESSION_LIFETIME_MS } from '../lib/sessionPolicy.js';
 import { AdminSession } from '../models/AdminSession.js';
 import { AdminUser } from '../models/AdminUser.js';
@@ -18,11 +27,7 @@ export interface RequestContext {
   userAgent: string | undefined;
 }
 
-export interface AuthenticatedAdmin {
-  id: string;
-  email: string;
-  role: Role;
-}
+export type { AuthenticatedAdmin };
 
 export interface LoginResult {
   token: string;
@@ -30,6 +35,30 @@ export interface LoginResult {
 }
 
 const GENERIC_LOGIN_ERROR = 'Incorrect email or password.';
+
+/**
+ * Shown ONLY after the correct password has been supplied (see `login`). Someone without the password
+ * always gets the generic error above, so this cannot be used to discover which emails are real or
+ * suspended; the legitimate owner of a suspended account still gets a clear, actionable message.
+ */
+const SUSPENDED_LOGIN_ERROR = 'This account has been suspended. Contact the site owner.';
+
+/** The signed-in admin as the API reports it. `permissions` comes from the ONE role-to-capability map. */
+export function toAuthenticatedAdmin(user: {
+  _id: mongoose.Types.ObjectId;
+  email: string;
+  role: string;
+  mustChangePassword?: boolean | null | undefined;
+}): AuthenticatedAdmin {
+  const role = user.role as Role;
+  return {
+    id: user._id.toString(),
+    email: user.email,
+    role,
+    mustChangePassword: user.mustChangePassword === true,
+    permissions: [...permissionsFor(role)],
+  };
+}
 
 /**
  * Validates credentials and, on success, creates a real server-side session (Fork 2 — a
@@ -63,6 +92,19 @@ export async function login(input: LoginInput, context: RequestContext): Promise
     throw new UnauthenticatedError(GENERIC_LOGIN_ERROR);
   }
 
+  // Only now, with the right password in hand, is it safe to say why sign-in is refused.
+  if (evaluateSessionAccess(user, { allowPasswordChange: true }) === 'suspended') {
+    await logAdminActivity({
+      eventType: 'login_failure',
+      adminUserId: user._id,
+      attemptedEmail: email,
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
+      metadata: { reason: 'suspended' },
+    });
+    throw new ForbiddenError(SUSPENDED_LOGIN_ERROR);
+  }
+
   const sessionId = generateRandomToken();
   const expiresAt = new Date(Date.now() + SESSION_LIFETIME_MS);
   await AdminSession.create({ adminUserId: user._id, sessionId, expiresAt });
@@ -80,7 +122,7 @@ export async function login(input: LoginInput, context: RequestContext): Promise
 
   return {
     token: signSessionToken(sessionId),
-    admin: { id: user._id.toString(), email: user.email, role: user.role as Role },
+    admin: toAuthenticatedAdmin(user),
   };
 }
 
@@ -123,7 +165,14 @@ export async function validateSession(sessionId: string): Promise<AuthenticatedA
   const user = await AdminUser.findById(session.adminUserId);
   if (!user) return null;
 
-  return { id: user._id.toString(), email: user.email, role: user.role as Role };
+  // A suspended account is refused on its very next request, whether or not its sessions have been
+  // revoked yet: suspension can never lag behind. (`allowPasswordChange` only matters for the
+  // password rule, which `requireSession` applies; here only suspension is decided.)
+  if (evaluateSessionAccess(user, { allowPasswordChange: true }) === 'suspended') return null;
+
+  // The role is read from the database on every request, never from the token, so a role change
+  // applies immediately.
+  return toAuthenticatedAdmin(user);
 }
 
 /**
@@ -187,6 +236,8 @@ export async function confirmPasswordReset(
   if (!user) throw new UnauthenticatedError(GENERIC_RESET_ERROR);
 
   user.passwordHash = await hashPassword(input.newPassword);
+  // They just chose this password themselves, so a pending "change your temporary password" is done.
+  user.mustChangePassword = false;
   await user.save();
 
   resetToken.usedAt = new Date();
@@ -201,4 +252,60 @@ export async function confirmPasswordReset(
     ipAddress: context.ipAddress,
     userAgent: context.userAgent,
   });
+}
+
+/**
+ * Changes the signed-in admin's own password. Used for the FORCED change (an account still on the
+ * temporary password a super_admin gave it) and for a voluntary one; both need the current password, so
+ * a session someone walked away from cannot be used to take the account over.
+ *
+ * Every OTHER session for the account is revoked (a changed password should sign out anywhere the old
+ * one may be in use); the session making this request stays signed in. A wrong current password is a 400
+ * on that field (not a 401: the session itself is fine, and the web app treats 401 as "expired").
+ */
+export async function changePassword(
+  admin: AuthenticatedAdmin,
+  currentSessionId: string,
+  input: ChangePasswordInput,
+  context: RequestContext,
+): Promise<AuthenticatedAdmin> {
+  const user = await AdminUser.findById(admin.id).select('+passwordHash');
+  if (!user) throw new UnauthenticatedError();
+
+  const currentMatches = await verifyPassword(input.currentPassword, user.passwordHash);
+  if (!currentMatches) {
+    await logAdminActivity({
+      eventType: 'login_failure',
+      adminUserId: user._id,
+      attemptedEmail: user.email,
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
+      metadata: { reason: 'change_password_wrong_current_password' },
+    });
+    throw new ValidationError([
+      { location: 'body', path: 'currentPassword', message: 'Your current password is incorrect.' },
+    ]);
+  }
+
+  const wasForced = user.mustChangePassword === true;
+  user.passwordHash = await hashPassword(input.newPassword);
+  user.mustChangePassword = false;
+  await user.save();
+
+  // `trusted`: `sanitizeFilter` would otherwise turn `$ne` into `$eq`; the operand is our own session id.
+  await AdminSession.updateMany(
+    { adminUserId: user._id, revokedAt: null, sessionId: mongoose.trusted({ $ne: currentSessionId }) },
+    { revokedAt: new Date() },
+  );
+
+  await logAdminActivity({
+    eventType: 'password_changed',
+    adminUserId: user._id,
+    attemptedEmail: user.email,
+    ipAddress: context.ipAddress,
+    userAgent: context.userAgent,
+    metadata: { forced: wasForced },
+  });
+
+  return toAuthenticatedAdmin(user);
 }

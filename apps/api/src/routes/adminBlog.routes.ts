@@ -9,7 +9,7 @@ import { Router } from 'express';
 
 import * as controller from '../controllers/adminBlog.controller.js';
 import { csrfProtection } from '../middleware/csrf.js';
-import { requireRole } from '../middleware/requireRole.js';
+import { requirePermission } from '../middleware/requirePermission.js';
 import { requireSession } from '../middleware/requireSession.js';
 import { validate } from '../middleware/validate.js';
 import { mongoIdParamSchema } from '../schemas/adminSubmissions.js';
@@ -17,10 +17,21 @@ import { mongoIdParamSchema } from '../schemas/adminSubmissions.js';
 /**
  * Blog CMS endpoints, mounted at `/api/v1/admin/blog`.
  *
- * Mounted BEFORE `adminRouter` in routes/index.ts: `adminRouter` applies a router-wide
- * `requireRole('super_admin', 'admin')`, which would lock out `content_editor` — the role
- * apps/api/CLAUDE.md section 5 defines as "blog and portfolio content only". This router carries
- * its own explicit role list instead.
+ * Mounted BEFORE `adminRouter` in routes/index.ts. Each route carries its OWN capability (see
+ * `ROLE_PERMISSIONS` in `@nexastack/shared`), because the roles that use the blog differ in what they
+ * may do to it:
+ *
+ *   view a post or list posts, edit a post ......... content:edit   (a content editor: DRAFTS only,
+ *                                                                    enforced in `blogPost.service`)
+ *   create a draft ................................ content:create
+ *   publish, unpublish, archive, restore ........... content:publish (changes what the public sees)
+ *   delete a post ................................. content:delete
+ *   categories: create ............................ content:create
+ *   categories: rename, reorder .................... content:publish (they change the live site)
+ *   categories: delete ............................ content:delete
+ *
+ * Editing a post that is not a draft is live-affecting, so it needs `content:publish` too: that check
+ * depends on the post's status, so it lives in the service, not in this table.
  *
  * Every mutation also passes `csrfProtection` (exact Origin + custom header). Reads do not need
  * it. No rate limiter, consistent with the other session-gated admin routes (apps/api/CLAUDE.md
@@ -28,7 +39,13 @@ import { mongoIdParamSchema } from '../schemas/adminSubmissions.js';
  */
 export const adminBlogRouter = Router();
 
-adminBlogRouter.use(requireSession, requireRole('super_admin', 'admin', 'content_editor'));
+adminBlogRouter.use(requireSession);
+
+const canView = requirePermission('content:edit');
+const canCreate = requirePermission('content:create');
+const canEdit = requirePermission('content:edit');
+const canPublish = requirePermission('content:publish');
+const canDelete = requirePermission('content:delete');
 
 const idParams = { params: mongoIdParamSchema };
 
@@ -56,9 +73,10 @@ const idParams = { params: mongoIdParamSchema };
  *       400: { description: Invalid body (VALIDATION_ERROR). }
  *       409: { description: Duplicate slug (CONFLICT). }
  */
-adminBlogRouter.get('/posts', validate({ query: blogPostListQuerySchema }), controller.listPosts);
+adminBlogRouter.get('/posts', canView, validate({ query: blogPostListQuerySchema }), controller.listPosts);
 adminBlogRouter.post(
   '/posts',
+  canCreate,
   csrfProtection,
   validate({ body: blogPostFormSchema }),
   controller.createPost,
@@ -92,14 +110,15 @@ adminBlogRouter.post(
  *       404: { description: Not found (NOT_FOUND). }
  *       409: { description: Post is published or unpublished (CONFLICT). }
  */
-adminBlogRouter.get('/posts/:id', validate(idParams), controller.getPost);
+adminBlogRouter.get('/posts/:id', canView, validate(idParams), controller.getPost);
 adminBlogRouter.patch(
   '/posts/:id',
+  canEdit,
   csrfProtection,
   validate({ ...idParams, body: blogPostFormSchema }),
   controller.updatePost,
 );
-adminBlogRouter.delete('/posts/:id', csrfProtection, validate(idParams), controller.deletePost);
+adminBlogRouter.delete('/posts/:id', canDelete, csrfProtection, validate(idParams), controller.deletePost);
 
 /**
  * @openapi
@@ -119,6 +138,7 @@ adminBlogRouter.delete('/posts/:id', csrfProtection, validate(idParams), control
  */
 adminBlogRouter.post(
   '/posts/:id/status',
+  canPublish,
   csrfProtection,
   validate({ ...idParams, body: contentStatusTransitionSchema }),
   controller.changePostStatus,
@@ -142,9 +162,10 @@ adminBlogRouter.post(
  *       400: { description: Invalid body (VALIDATION_ERROR). }
  *       409: { description: Duplicate slug (CONFLICT). }
  */
-adminBlogRouter.get('/categories', controller.listCategories);
+adminBlogRouter.get('/categories', canView, controller.listCategories);
 adminBlogRouter.post(
   '/categories',
+  canCreate,
   csrfProtection,
   validate({ body: blogCategoryFormSchema }),
   controller.createCategory,
@@ -166,6 +187,7 @@ adminBlogRouter.post(
  */
 adminBlogRouter.put(
   '/categories/order',
+  canPublish,
   csrfProtection,
   validate({ body: reorderSchema }),
   controller.reorderCategories,
@@ -191,12 +213,14 @@ adminBlogRouter.put(
  */
 adminBlogRouter.patch(
   '/categories/:id',
+  canPublish,
   csrfProtection,
   validate({ ...idParams, body: blogCategoryFormSchema }),
   controller.updateCategory,
 );
 adminBlogRouter.delete(
   '/categories/:id',
+  canDelete,
   csrfProtection,
   validate(idParams),
   controller.deleteCategory,
