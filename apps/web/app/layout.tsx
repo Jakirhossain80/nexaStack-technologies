@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import type { ReactNode } from 'react';
 
+import { RouteFocusManager } from '@/components/layout/RouteFocusManager';
 import { ThemeProvider } from '@/components/layout/ThemeProvider';
 import { company } from '@/config/company';
 import { DEFAULT_SHARE_IMAGE } from '@/lib/blogImage';
@@ -105,6 +106,7 @@ export default function RootLayout({ children }: Readonly<RootLayoutProps>) {
         >
           Skip to main content
         </a>
+        <RouteFocusManager />
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

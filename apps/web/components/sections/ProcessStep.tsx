@@ -12,7 +12,7 @@ export interface ProcessStepProps {
 }
 
 const INLINE_LINK_CLASSES =
-  'rounded-field text-primary-blue underline-offset-4 focus-ring hover:text-primary-blue-hover hover:underline';
+  'rounded-field text-primary-blue underline underline-offset-4 focus-ring hover:text-primary-blue-hover';
 
 /**
  * One step in the homepage process timeline. DOM order is always step order (1..8) — only the

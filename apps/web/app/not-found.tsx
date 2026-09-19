@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <main id="main-content" className="page-container section-y">
+    <main id="main-content" tabIndex={-1} className="page-container section-y focus:outline-none">
       <h1 className="text-page font-semibold tracking-tight">Page not found</h1>
       <p className="mt-4 max-w-prose text-body-lg text-secondary">
         The page you were looking for does not exist or has moved. Check the address, or return to

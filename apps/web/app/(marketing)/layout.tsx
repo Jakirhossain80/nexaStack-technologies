@@ -17,7 +17,12 @@ export default function MarketingLayout({ children }: Readonly<MarketingLayoutPr
   return (
     <>
       <Navbar />
-      <main id="main-content">{children}</main>
+      {/* tabIndex={-1}: a fragment link (the skip link, or any `#main-content` href) scrolls here
+          either way, but only focuses it if it's focusable — without this, activating the skip
+          link left focus on <body>, so the very next Tab restarted from the top of the page. */}
+      <main id="main-content" tabIndex={-1} className="focus:outline-none">
+        {children}
+      </main>
       <Footer />
       <WhatsAppWidget />
     </>

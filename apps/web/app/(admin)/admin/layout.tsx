@@ -21,5 +21,11 @@ export interface AdminLayoutProps {
  * `requireSession`/`requirePermission` on the API route itself, never by the UI alone.
  */
 export default function AdminLayout({ children }: Readonly<AdminLayoutProps>) {
-  return <main id="main-content">{children}</main>;
+  // tabIndex={-1}: makes the skip link's target actually focusable — see the identical note in
+  // the (marketing) layout, which has the same fix for the same reason.
+  return (
+    <main id="main-content" tabIndex={-1} className="focus:outline-none">
+      {children}
+    </main>
+  );
 }

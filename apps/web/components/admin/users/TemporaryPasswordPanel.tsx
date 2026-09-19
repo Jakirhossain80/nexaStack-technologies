@@ -53,18 +53,22 @@ export function TemporaryPasswordPanel({
         id="temporary-password-heading"
         ref={headingRef}
         tabIndex={-1}
-        className="text-card font-semibold text-primary focus:outline-none"
+        className="text-card font-semibold text-primary focus-ring"
       >
         {kind === 'created' ? 'Account created' : 'Password reset'}: copy the temporary password now
       </h2>
       <p className="mt-2 text-body text-secondary">
         This is the only time it is shown. It cannot be looked up later; if it is lost, use{' '}
-        <span className="font-medium text-primary">Reset password</span> on the account for a new one.
-        Give it to <span className="break-all font-medium text-primary">{email}</span> through a private
-        channel. They will be asked to choose their own password the first time they sign in.
+        <span className="font-medium text-primary">Reset password</span> on the account for a new
+        one. Give it to <span className="font-medium break-all text-primary">{email}</span> through
+        a private channel. They will be asked to choose their own password the first time they sign
+        in.
       </p>
 
-      <label htmlFor="temporary-password-value" className="mt-4 block text-label font-medium text-primary">
+      <label
+        htmlFor="temporary-password-value"
+        className="mt-4 block text-label font-medium text-primary"
+      >
         Temporary password
       </label>
       {/* A read-only field, not a paragraph: it has a real label, a screen reader reads it, and a
