@@ -2,9 +2,17 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { ArticleView } from '@/components/sections/ArticleView';
+import { BlogUnavailable } from '@/components/sections/BlogUnavailable';
+import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { company } from '@/config/company';
 import { env } from '@/lib/env';
-import { getPost, getRelatedPosts } from '@/lib/blog';
+import {
+  getPost,
+  getRelatedPosts,
+  logBlogReadFailure,
+  type BlogPost,
+  type BlogPostDetail,
+} from '@/lib/blog';
 import { DEFAULT_SHARE_IMAGE, shareImage } from '@/lib/blogImage';
 
 // Article detail template for `/blog/[slug]`, reading published posts from MongoDB through
@@ -36,7 +44,14 @@ function serializeJsonLd(data: unknown): string {
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const post = await getPost(slug);
+  let post: BlogPostDetail | null;
+  try {
+    post = await getPost(slug);
+  } catch {
+    // The page body logs the real cause (once) and shows the unavailable state; metadata only has to
+    // not throw, and to keep the placeholder out of search results.
+    return { title: 'Article unavailable', robots: { index: false } };
+  }
   if (!post) return {};
 
   const url = `${env.NEXT_PUBLIC_SITE_URL}/blog/${post.slug}`;
@@ -67,10 +82,33 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = await params;
-  const post = await getPost(slug);
+
+  // Only the database reads are inside the try: `notFound()` below must still produce a real 404.
+  let post: BlogPostDetail | null;
+  let relatedPosts: BlogPost[];
+  try {
+    post = await getPost(slug);
+    relatedPosts = post ? await getRelatedPosts(post.slug) : [];
+  } catch (error) {
+    logBlogReadFailure({ route: '/blog/[slug]', slug }, error);
+    return (
+      <div className="page-container section-y">
+        <Breadcrumb
+          items={[
+            { label: 'Home', href: '/' },
+            { label: 'Blog', href: '/blog' },
+            { label: 'Article unavailable' },
+          ]}
+        />
+        <h1 className="mt-8 text-page font-semibold tracking-tight text-primary">
+          Article unavailable
+        </h1>
+        <BlogUnavailable retryHref={`/blog/${encodeURIComponent(slug)}`} />
+      </div>
+    );
+  }
   if (!post) notFound();
 
-  const relatedPosts = await getRelatedPosts(post.slug);
   const canonicalUrl = `${env.NEXT_PUBLIC_SITE_URL}/blog/${post.slug}`;
   const articleImage = shareImage(post.coverImage, env.NEXT_PUBLIC_SITE_URL);
 

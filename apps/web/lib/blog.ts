@@ -255,6 +255,16 @@ export async function getAllPosts(): Promise<BlogPost[]> {
   return loadPublishedPosts();
 }
 
+/**
+ * Server-side log line for a failed blog read (database unreachable, bad connection string, and so on).
+ * A blog page that catches such a failure calls this and shows `BlogUnavailable` instead: the detail
+ * stays in the server log (root CLAUDE.md 11.2) and nothing from `error` reaches the visitor. This app
+ * logs with `console.error` (no Pino here; see `app/sitemap.ts`), so the request context is a plain object.
+ */
+export function logBlogReadFailure(context: { route: string; slug?: string }, error: unknown): void {
+  console.error('[blog] Could not read published posts; showing the unavailable state.', context, error);
+}
+
 /** The newest published post marked `featured`, or null. */
 export async function getFeaturedPost(): Promise<BlogPost | null> {
   const posts = await loadPublishedPosts();

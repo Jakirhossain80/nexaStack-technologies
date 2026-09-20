@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { ArticleGrid } from '@/components/sections/ArticleGrid';
 import { BlogFilterLinks } from '@/components/sections/BlogFilterLinks';
 import { BlogSearchInput } from '@/components/sections/BlogSearchInput';
+import { BlogUnavailable } from '@/components/sections/BlogUnavailable';
 import { FeaturedArticle } from '@/components/sections/FeaturedArticle';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { Button } from '@/components/ui/Button';
@@ -17,6 +18,7 @@ import {
   getCategories,
   getFeaturedPost,
   getTags,
+  logBlogReadFailure,
 } from '@/lib/blog';
 
 // Full `/blog` page, reading published posts from MongoDB through `lib/blog.ts`. With zero
@@ -31,20 +33,46 @@ interface BlogPageProps {
   searchParams: Promise<{ q?: string; category?: string; tag?: string; page?: string }>;
 }
 
+// Deliberately a static export, not `generateMetadata`: an async one that reads the database moves
+// `<title>` out of `<head>` into the streamed body for every visitor, including when the database is up.
 export const metadata: Metadata = {
   title: 'Blog',
   description: 'Articles on web development and building better websites, from NexaStack Technologies.',
   alternates: { canonical: '/blog' },
 };
 
+/**
+ * Everything the list needs from the database, or `null` if it cannot be read. The failure is logged
+ * here (server-side, real cause) and the page shows `BlogUnavailable` rather than the generic error
+ * boundary, so a database outage never leaves the visitor with a broken page.
+ */
+async function loadBlogListData() {
+  try {
+    const allPosts = await getAllPosts();
+    const hasAnyPosts = allPosts.length > 0;
+    return {
+      allPosts,
+      featuredPost: hasAnyPosts ? await getFeaturedPost() : null,
+      categories: hasAnyPosts ? await getCategories() : [],
+      tags: hasAnyPosts ? await getTags() : [],
+    };
+  } catch (error) {
+    logBlogReadFailure({ route: '/blog' }, error);
+    return null;
+  }
+}
+
 export default async function BlogPage({ searchParams }: BlogPageProps) {
   const params = await searchParams;
-  const allPosts = await getAllPosts();
+  const data = await loadBlogListData();
+  const isUnavailable = data === null;
+  const { allPosts, featuredPost, categories, tags } = data ?? {
+    allPosts: [],
+    featuredPost: null,
+    categories: [],
+    tags: [],
+  };
   const hasAnyPosts = allPosts.length > 0;
-
-  const featuredPost = hasAnyPosts ? await getFeaturedPost() : null;
-  const categories = hasAnyPosts ? await getCategories() : [];
-  const tags = hasAnyPosts ? await getTags() : [];
   const gridSourcePosts = featuredPost
     ? allPosts.filter((post) => post.slug !== featuredPost.slug)
     : allPosts;
@@ -72,7 +100,9 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
         </p>
       </ScrollReveal>
 
-      {hasAnyPosts ? (
+      {isUnavailable ? (
+        <BlogUnavailable retryHref="/blog" />
+      ) : hasAnyPosts ? (
         <ScrollReveal className="mt-12">
           {featuredPost && (
             <div className="mb-12">

@@ -33,6 +33,14 @@ function apiOrigin(): string | null {
 
 const TURNSTILE_ORIGIN = 'https://challenges.cloudflare.com';
 const CLOUDINARY_ORIGIN = 'https://res.cloudinary.com';
+/**
+ * `@vercel/speed-insights` loads `script.debug.js` from here, in development only. In production it
+ * loads `/_vercel/speed-insights/script.js` from this site's own origin (already `'self'`) and reports
+ * to `/_vercel/speed-insights/vitals`, also same-origin, so production needs no extra origin and
+ * neither mode needs a `connect-src` entry (the package only uses `vitals.vercel-insights.com` when a
+ * `dsn` prop is passed, which this site does not do).
+ */
+const VERCEL_SCRIPTS_ORIGIN = 'https://va.vercel-scripts.com';
 
 /**
  * Content-Security-Policy, set as a STATIC header so every page stays statically rendered and CDN-cacheable.
@@ -44,13 +52,19 @@ const CLOUDINARY_ORIGIN = 'https://res.cloudinary.com';
  * `<base>` hijack; forms post only to this site; and the site cannot be framed. Stored-XSS in blog
  * bodies is covered separately, by the article-HTML allow-list (`ArticleBody`), not by this header.
  *
- * Development also needs `'unsafe-eval'` (React's debugging) and websockets (HMR).
+ * Development also needs `'unsafe-eval'` (React's debugging), websockets (HMR) and the Vercel Speed
+ * Insights debug script's origin (see `VERCEL_SCRIPTS_ORIGIN`).
  */
 function contentSecurityPolicy(): string {
   const api = apiOrigin();
   const directives: Record<string, string[]> = {
     'default-src': ["'self'"],
-    'script-src': ["'self'", "'unsafe-inline'", TURNSTILE_ORIGIN, ...(isDevelopment ? ["'unsafe-eval'"] : [])],
+    'script-src': [
+      "'self'",
+      "'unsafe-inline'",
+      TURNSTILE_ORIGIN,
+      ...(isDevelopment ? ["'unsafe-eval'", VERCEL_SCRIPTS_ORIGIN] : []),
+    ],
     'style-src': ["'self'", "'unsafe-inline'"],
     'img-src': ["'self'", 'data:', 'blob:', CLOUDINARY_ORIGIN],
     'font-src': ["'self'"],
