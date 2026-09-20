@@ -11,16 +11,18 @@ import { DEFAULT_SHARE_IMAGE, shareImage } from '@/lib/blogImage';
 // `lib/blog.ts`. The layout itself lives in `ArticleView`, which the admin preview also renders,
 // so the two cannot drift.
 //
-// Rendered on every request (`force-dynamic`), with no `generateStaticParams` and no
-// `dynamicParams = false`: a post published or unpublished in the admin must show up or vanish
-// immediately, not after the next build. A statically generated or cached page here would keep an
-// unpublished post live.
+// Rendered on every request, with no `generateStaticParams` and no `dynamicParams = false`: a post
+// published or unpublished in the admin must show up or vanish immediately, not after the next
+// build. What is cached is the DATABASE READ behind it (`lib/blog.ts`), under the `blog` tag, not the
+// rendered page: the admin UI expires that tag whenever a post or category changes
+// (`lib/blogActions.ts`), so a change is visible on the very next request, and the tag also expires
+// on its own after an hour, so a missed invalidation cannot keep an unpublished post live
+// indefinitely. Do NOT add `generateStaticParams` or cache the page itself: a page cached at build
+// time is not tied to the tag and would keep an unpublished post live.
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
 }
-
-export const dynamic = 'force-dynamic';
 
 /**
  * JSON for a `<script type="application/ld+json">`. `JSON.stringify` does not escape `<`, so a

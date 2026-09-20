@@ -15,6 +15,7 @@ import { useId, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { adminFormRequest } from '@/lib/adminFormRequest';
+import { expireBlogCache } from '@/lib/expireBlogCache';
 import { formatFileSize } from '@/lib/quotationLabels';
 
 export interface MediaReplaceFormProps {
@@ -123,6 +124,10 @@ export function MediaReplaceForm({ media }: MediaReplaceFormProps) {
       else setMessage({ kind: 'error', text: result.error.message });
       return;
     }
+
+    // Replacing a file repoints the blog posts that use it as their cover, so the public blog's cache
+    // is now out of date (best-effort; only when posts were actually repointed).
+    if ((result.data.postsUpdated ?? 0) > 0) await expireBlogCache();
 
     setMessage({
       kind: 'success',

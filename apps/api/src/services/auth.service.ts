@@ -159,10 +159,16 @@ export async function validateSession(sessionId: string): Promise<AuthenticatedA
     sessionId,
     revokedAt: null,
     expiresAt: mongoose.trusted({ $gt: new Date() }),
-  });
+  })
+    // Runs on EVERY authenticated admin request, and only reads: plain objects with just the fields
+    // used below, not full Mongoose documents.
+    .select('adminUserId')
+    .lean();
   if (!session) return null;
 
-  const user = await AdminUser.findById(session.adminUserId);
+  const user = await AdminUser.findById(session.adminUserId)
+    .select('email role status mustChangePassword')
+    .lean();
   if (!user) return null;
 
   // A suspended account is refused on its very next request, whether or not its sessions have been

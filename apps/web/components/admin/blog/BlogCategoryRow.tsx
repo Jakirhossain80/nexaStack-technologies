@@ -8,6 +8,7 @@ import { ConfirmDeleteButton } from '@/components/admin/content/ConfirmDeleteBut
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { adminRequest } from '@/lib/adminRequest';
+import { expireBlogCache } from '@/lib/expireBlogCache';
 
 export interface BlogCategoryRowProps {
   category: BlogCategoryAdmin;
@@ -54,6 +55,8 @@ export function BlogCategoryRow({
       setError(nameIssue?.message ?? result.error.message);
       return;
     }
+    // A category's name is shown on public posts and filters; expire the public cache (best-effort).
+    await expireBlogCache();
     setEditing(false);
     router.refresh();
   }

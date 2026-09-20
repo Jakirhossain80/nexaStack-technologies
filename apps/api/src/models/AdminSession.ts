@@ -28,6 +28,9 @@ const adminSessionSchema = new Schema(
 // the explicit expiresAt/revokedAt comparison in requireSession.ts, which doesn't rely on
 // TTL's background-sweep timing).
 adminSessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+// "Revoke every live session of this admin" (suspend, password reset, password change) matches on
+// `adminUserId` + `revokedAt: null`. Small collection, but it is a security path, so keep it indexed.
+adminSessionSchema.index({ adminUserId: 1, revokedAt: 1 });
 
 export type AdminSessionDocument = InferSchemaType<typeof adminSessionSchema>;
 

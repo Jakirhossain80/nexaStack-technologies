@@ -33,6 +33,8 @@ const adminActivityLogSchema = new Schema(
 
 adminActivityLogSchema.index({ createdAt: -1 });
 adminActivityLogSchema.index({ adminUserId: 1, createdAt: -1 });
+// The audit view filters by event type (and a date range) and sorts newest first.
+adminActivityLogSchema.index({ eventType: 1, createdAt: -1 });
 
 export type AdminActivityLogDocument = InferSchemaType<typeof adminActivityLogSchema>;
 export type AdminActivityEventType = AdminEventType;

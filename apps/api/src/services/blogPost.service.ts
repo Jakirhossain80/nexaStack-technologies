@@ -136,6 +136,9 @@ export async function listPosts(
 
   const [posts, total] = await Promise.all([
     BlogPost.find(filter)
+      // Only what `toSummary` shows. Without this every row also loaded `contentMarkdown` (up to 50 KB)
+      // and `contentHtml`, so one page of the list could pull a megabyte or two from the database.
+      .select('title slug category status featured publishedAt updatedAt')
       .sort({ updatedAt: -1, _id: -1 })
       .skip(skipFor(query.page, query.limit))
       .limit(query.limit)

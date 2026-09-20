@@ -24,6 +24,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { adminRequest } from '@/lib/adminRequest';
+import { expireBlogCache } from '@/lib/expireBlogCache';
 import type { PickerItem } from '@/lib/mediaActions';
 
 export interface BlogPostFormProps {
@@ -212,6 +213,9 @@ export function BlogPostForm({ categories, post, canPublish, canDelete }: BlogPo
       return;
     }
 
+    // The public blog caches published posts; tell it this one changed (best-effort, see the helper).
+    await expireBlogCache();
+
     // Re-base the form on what the server saved, so `isDirty` clears and the status actions unlock.
     reset(toFields(result.data.post));
     setTagsText(result.data.post.tags.join(', '));
@@ -249,6 +253,7 @@ export function BlogPostForm({ categories, post, canPublish, canDelete }: BlogPo
               <StatusActionBar
                 status={post.status}
                 statusUrl={`${BLOG_API}/posts/${post.id}/status`}
+                onSuccess={expireBlogCache}
                 disabledReason={
                   isDirty
                     ? 'You have unsaved changes. Save them before changing the status.'

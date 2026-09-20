@@ -168,6 +168,7 @@ All versions are exact pins. `zod`, `typescript` and `@types/node` are pinned on
 | web | tailwindcss / @tailwindcss/postcss | 4.3.3 |
 | web | clsx | 2.1.1 |
 | web | tailwind-merge | 3.7.0 |
+| web | @vercel/speed-insights | 2.0.0 |
 | web | @radix-ui/react-dialog | 1.1.23 |
 | web | @radix-ui/react-dropdown-menu | 2.1.24 |
 | web | react-hook-form | 7.65.0 |
@@ -674,7 +675,11 @@ Do not silently resolve these. Ask.
    image is chosen from the Media Library (`/admin/media`) and stored as `coverMediaId` plus a URL
    snapshot the API keeps in step (Replace repoints posts; Delete is refused while a post uses the
    image); a legacy site path (`/blog/x.png`) is still accepted. Images inside post bodies are not
-   supported yet (the renderer has no image syntax).
+   supported yet (the renderer has no image syntax). Public blog reads are cached under the
+   `blog` tag (`unstable_cache` in `apps/web/lib/blog.ts`, 1-hour safety expiry); the admin UI
+   expires the tag after each change through the `revalidateBlogAction` Server Action
+   (`apps/web/lib/blogActions.ts`), so a publish or unpublish shows on the next request. The page
+   itself stays rendered per request, never cached, so an unpublished post cannot linger.
 4. **Transactional email provider** — Resend, Postmark or Brevo.
 5. **Render hosting tier** — the free tier sleeps and adds ~30s to the first request.
    Unacceptable for a contact form. Either pay, or serve contact/quotation from Next.js

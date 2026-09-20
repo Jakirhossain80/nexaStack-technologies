@@ -1,8 +1,10 @@
 import { CONTENT_STATUS, SLUG_PATTERN, type BlogPostAdminDetail } from '@nexastack/shared';
+import { unstable_cache } from 'next/cache';
 import { cache } from 'react';
 
 import { company } from '@/config/company';
 import { isLoadableCover } from '@/lib/blogImage';
+import { BLOG_CACHE_SECONDS, BLOG_CACHE_TAG } from '@/lib/blogCache';
 import { BlogCategory } from '@/lib/models/BlogCategory';
 import { BlogPost as BlogPostModel } from '@/lib/models/BlogPost';
 import { connectToDatabase } from '@/lib/mongodb';
@@ -19,9 +21,17 @@ import { connectToDatabase } from '@/lib/mongodb';
  * the pure helpers at the bottom (`filterAndPaginatePosts`, `computeReadingTime`) are unchanged
  * from the earlier stub, so the listing/detail components did not have to change.
  *
- * Reads are wrapped in React's `cache()`, which de-duplicates within ONE server render only (a
- * page calling `getAllPosts()`, `getCategories()` and `getFeaturedPost()` runs one query, not
- * three) and never across requests, so an unpublished post cannot linger.
+ * Reads are cached in two layers:
+ * - `unstable_cache`, tagged `BLOG_CACHE_TAG`, keeps the result across requests so a visit does not
+ *   cost a MongoDB round trip. The admin UI expires the tag when a post or category changes
+ *   (`lib/blogActions.ts`), so a publish or unpublish shows on the very next request; the entry also
+ *   expires by itself after `BLOG_CACHE_SECONDS`, so a missed invalidation cannot leave an
+ *   unpublished post live for long. (Next.js 16 marks `unstable_cache` as superseded by `'use cache'`,
+ *   which needs `cacheComponents`, a sitewide switch; `unstable_cache` is fully supported in 16.3.)
+ * - React's `cache()` de-duplicates within ONE server render (a page calling `getAllPosts()`,
+ *   `getCategories()` and `getFeaturedPost()` runs one lookup, not three).
+ *
+ * Only published content is ever cached, and only plain JSON-serialisable values (dates are ISO strings).
  */
 
 export interface BlogPost {
@@ -77,12 +87,19 @@ interface DetailRecord extends SummaryRecord {
 
 const PUBLISHED = { status: CONTENT_STATUS.PUBLISHED } as const;
 
+const CACHE_OPTIONS = { tags: [BLOG_CACHE_TAG], revalidate: BLOG_CACHE_SECONDS };
+
 /** Category names by id, in display order. */
-const loadCategories = cache(async (): Promise<{ id: string; name: string }[]> => {
-  await connectToDatabase();
-  const docs = await BlogCategory.find().sort({ order: 1, name: 1 }).lean();
-  return docs.map((doc) => ({ id: String(doc._id), name: doc.name }));
-});
+const readCategories = unstable_cache(
+  async (): Promise<{ id: string; name: string }[]> => {
+    await connectToDatabase();
+    const docs = await BlogCategory.find().sort({ order: 1, name: 1 }).lean();
+    return docs.map((doc) => ({ id: String(doc._id), name: doc.name }));
+  },
+  ['blog', 'categories'],
+  CACHE_OPTIONS,
+);
+const loadCategories = cache(readCategories);
 
 function categoryNameOf(record: SummaryRecord, categories: { id: string; name: string }[]): string {
   return categories.find((category) => category.id === String(record.category))?.name ?? UNCATEGORIZED;
@@ -187,32 +204,51 @@ export function blogPostDetailFromAdmin(detail: BlogPostAdminDetail): BlogPostDe
 }
 
 /** All published posts, newest first. */
-const loadPublishedPosts = cache(async (): Promise<BlogPost[]> => {
-  await connectToDatabase();
-  const [records, categories] = await Promise.all([
-    BlogPostModel.find(PUBLISHED)
-      .select(SUMMARY_FIELDS)
-      .sort({ publishedAt: -1, _id: -1 })
-      .lean<SummaryRecord[]>(),
-    loadCategories(),
-  ]);
-  return records.map((record) => toBlogPost(record, categories));
-});
+const readPublishedPosts = unstable_cache(
+  async (): Promise<BlogPost[]> => {
+    await connectToDatabase();
+    const [records, categories] = await Promise.all([
+      BlogPostModel.find(PUBLISHED)
+        .select(SUMMARY_FIELDS)
+        .sort({ publishedAt: -1, _id: -1 })
+        .lean<SummaryRecord[]>(),
+      loadCategories(),
+    ]);
+    return records.map((record) => toBlogPost(record, categories));
+  },
+  ['blog', 'published-posts'],
+  CACHE_OPTIONS,
+);
+const loadPublishedPosts = cache(readPublishedPosts);
+
+const readPublishedPost = unstable_cache(
+  async (slug: string): Promise<BlogPostDetail | null> => {
+    await connectToDatabase();
+    const [record, categories] = await Promise.all([
+      BlogPostModel.findOne({ ...PUBLISHED, slug })
+        .select(`${SUMMARY_FIELDS} contentHtml tableOfContents`)
+        .lean<DetailRecord | null>(),
+      loadCategories(),
+    ]);
+    if (!record) return null;
+
+    return withDetail(toBlogPost(record, categories), record.contentHtml, record.tableOfContents);
+  },
+  ['blog', 'published-post'],
+  CACHE_OPTIONS,
+);
 
 const loadPublishedPost = cache(async (slug: string): Promise<BlogPostDetail | null> => {
   // The slug comes from the URL. Only a well-formed one can match a real post.
   if (!SLUG_PATTERN.test(slug)) return null;
 
-  await connectToDatabase();
-  const [record, categories] = await Promise.all([
-    BlogPostModel.findOne({ ...PUBLISHED, slug })
-      .select(`${SUMMARY_FIELDS} contentHtml tableOfContents`)
-      .lean<DetailRecord | null>(),
-    loadCategories(),
-  ]);
-  if (!record) return null;
+  // A slug that is not in the (cached) list of published posts is answered here, without a database
+  // read and, importantly, without creating a cache entry for it: the detail cache is keyed by slug,
+  // so caching lookups for arbitrary made-up slugs would let anyone grow it without bound.
+  const published = await loadPublishedPosts();
+  if (!published.some((post) => post.slug === slug)) return null;
 
-  return withDetail(toBlogPost(record, categories), record.contentHtml, record.tableOfContents);
+  return readPublishedPost(slug);
 });
 
 export async function getAllPosts(): Promise<BlogPost[]> {

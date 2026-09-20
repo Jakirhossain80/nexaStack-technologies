@@ -1,3 +1,4 @@
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import type { ReactNode } from 'react';
 
 import { Footer } from '@/components/layout/Footer';
@@ -12,6 +13,11 @@ export interface MarketingLayoutProps {
  * Public site shell: shared Navbar and Footer on every route in this group. `WhatsAppWidget`
  * is mounted here rather than the root layout so it's excluded from `(admin)` (its own separate
  * layout) and `/dev/*` preview routes (outside both route groups) without any path checks.
+ *
+ * `SpeedInsights` is mounted here for the same reason: Core Web Vitals field data should describe
+ * what visitors experience, not the admin's or the dev proof pages'. It does nothing until the site is
+ * deployed on Vercel with Speed Insights enabled (it loads `/_vercel/speed-insights/script.js`, which
+ * only Vercel serves), so locally it reports nothing.
  */
 export default function MarketingLayout({ children }: Readonly<MarketingLayoutProps>) {
   return (
@@ -25,6 +31,7 @@ export default function MarketingLayout({ children }: Readonly<MarketingLayoutPr
       </main>
       <Footer />
       <WhatsAppWidget />
+      <SpeedInsights />
     </>
   );
 }

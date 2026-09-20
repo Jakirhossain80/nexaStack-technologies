@@ -6,6 +6,7 @@ import { useState } from 'react';
 
 import { BlogCategoryRow } from '@/components/admin/blog/BlogCategoryRow';
 import { adminRequest } from '@/lib/adminRequest';
+import { expireBlogCache } from '@/lib/expireBlogCache';
 
 export interface BlogCategoryManagerProps {
   categories: readonly BlogCategoryAdmin[];
@@ -49,6 +50,8 @@ export function BlogCategoryManager({
       router.refresh();
       return;
     }
+    // Category order decides the public filter order; expire the public cache (best-effort).
+    await expireBlogCache();
     setMessage({
       kind: 'success',
       text: `Moved “${moved.name}” ${direction < 0 ? 'up' : 'down'}. It is now number ${target + 1} of ${categories.length}.`,

@@ -53,6 +53,11 @@ const contactSubmissionSchema = new Schema(
   { timestamps: { createdAt: true, updatedAt: false } },
 );
 
+// The admin list is "active = archived $ne true, newest first". `$ne` matches two ranges of the
+// compound index below, so Mongo cannot read it in `createdAt` order; the standalone `createdAt`
+// index is what serves that sort. It must be declared here too, exactly as in the web mirror, so the
+// collection has the same indexes whichever app connects first.
+contactSubmissionSchema.index({ createdAt: -1 });
 contactSubmissionSchema.index({ archived: 1, status: 1, createdAt: -1 });
 
 export type ContactSubmissionDocument = InferSchemaType<typeof contactSubmissionSchema>;

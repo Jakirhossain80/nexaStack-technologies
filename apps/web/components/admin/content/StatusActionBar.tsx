@@ -13,6 +13,8 @@ export interface StatusActionBarProps {
   statusUrl: string;
   /** When set, every action is disabled and this is shown as the reason (for example unsaved edits). */
   disabledReason?: string | undefined;
+  /** Runs after the API confirms a status change and before the page refreshes, e.g. to expire a public cache. */
+  onSuccess?: (() => void | Promise<void>) | undefined;
 }
 
 interface ActionCopy {
@@ -50,7 +52,7 @@ const ACTIONS: Record<ContentStatus, ActionCopy> = {
  * (`CONTENT_STATUS_TRANSITIONS`) — the same table the API enforces, so this can only offer moves
  * the server will accept. Shared by every full-CMS content type.
  */
-export function StatusActionBar({ status, statusUrl, disabledReason }: StatusActionBarProps) {
+export function StatusActionBar({ status, statusUrl, disabledReason, onSuccess }: StatusActionBarProps) {
   const router = useRouter();
   const [pendingTarget, setPendingTarget] = useState<ContentStatus | null>(null);
   const [message, setMessage] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
@@ -61,6 +63,7 @@ export function StatusActionBar({ status, statusUrl, disabledReason }: StatusAct
 
     const result = await adminRequest('POST', statusUrl, { status: target });
 
+    if (result.ok) await onSuccess?.();
     setPendingTarget(null);
     if (result.ok) {
       setMessage({ kind: 'success', text: ACTIONS[target].done });
