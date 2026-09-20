@@ -1,5 +1,6 @@
 import { Router } from 'express';
 
+import { noStore } from '../middleware/noStore.js';
 import { adminRouter } from './admin.routes.js';
 import { adminBlogRouter } from './adminBlog.routes.js';
 import { adminEnquiriesRouter } from './adminEnquiries.routes.js';
@@ -11,6 +12,8 @@ import { contactRouter } from './contact.routes.js';
 import { healthRouter } from './health.routes.js';
 
 const v1Router = Router();
+// Private data: never cacheable, whatever a browser or proxy would otherwise decide.
+v1Router.use(['/auth', '/admin'], noStore);
 v1Router.use('/contact', contactRouter);
 v1Router.use('/auth', authRouter);
 // Blog is mounted BEFORE the general admin router: that router's blanket role gate excludes

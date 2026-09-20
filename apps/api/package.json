@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "seed-admin": "tsx --env-file-if-exists=.env scripts/seed-admin.ts",
+    "backup-db": "tsx --env-file-if-exists=.env scripts/backup-db.ts",
     "migrate-enquiries": "tsx --env-file-if-exists=.env scripts/migrate-enquiry-status.ts",
     "migrate-admin-users": "tsx --env-file-if-exists=.env scripts/migrate-admin-users.ts",
     "migrate-quotations": "tsx --env-file-if-exists=.env scripts/migrate-quotation-status.ts",

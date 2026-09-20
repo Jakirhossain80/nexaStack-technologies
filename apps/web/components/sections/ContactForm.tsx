@@ -61,8 +61,16 @@ export function ContactForm() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | undefined>(undefined);
 
+  // A Turnstile token is single-use, so after any failed submit the widget is remounted (new key)
+  // to issue a fresh one; re-sending the spent token would be refused until a page reload.
+  const [turnstileKey, setTurnstileKey] = useState(0);
+
   const handleTurnstileVerify = useCallback((token: string) => setTurnstileToken(token), []);
   const handleTurnstileExpire = useCallback(() => setTurnstileToken(undefined), []);
+  const resetTurnstile = useCallback(() => {
+    setTurnstileToken(undefined);
+    setTurnstileKey((key) => key + 1);
+  }, []);
 
   const {
     register,
@@ -107,6 +115,7 @@ export function ContactForm() {
         }
         if (!mappedToField) setServerError(body.error.message);
         setStatus('idle');
+        resetTurnstile();
         return;
       }
 
@@ -114,6 +123,7 @@ export function ContactForm() {
     } catch {
       setServerError('Something went wrong sending your message. Please check your connection and try again.');
       setStatus('idle');
+      resetTurnstile();
     }
   });
 
@@ -283,7 +293,11 @@ export function ContactForm() {
       </div>
       <FieldError id="consent-error" message={errors.consent?.message} />
 
-      <TurnstileWidget onVerify={handleTurnstileVerify} onExpire={handleTurnstileExpire} />
+      <TurnstileWidget
+        key={turnstileKey}
+        onVerify={handleTurnstileVerify}
+        onExpire={handleTurnstileExpire}
+      />
 
       <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
         {isSubmitting ? 'Sending…' : 'Send message'}

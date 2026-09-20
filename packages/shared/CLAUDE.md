@@ -71,6 +71,11 @@ z.string().email("Invalid")                              // ❌
 **Keep shared constants here**, not duplicated in either app: role names, content status
 values, project categories, service slugs.
 
+**One narrow exception to "shapes and constants only": `src/utils/`.** A pure, environment-agnostic
+function that is a security check and must behave identically in both apps lives there (file-type
+byte sniffing, the stored-article-HTML allow-list). Written twice, such a check drifts. Anything
+that needs I/O, the environment or a framework still belongs in an app.
+
 ---
 
 ## 4. Versioning within the monorepo

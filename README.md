@@ -153,6 +153,40 @@ for example `bg-surface`, `text-secondary`, `border-default`, `bg-primary-blue`,
 default colour palette and radius scale are removed, so components cannot drift from the
 tokens. Open http://localhost:3000 to see every token in both themes.
 
+## Backups
+
+**There are no automated database backups.** The site's data (contact enquiries, quotation
+requests with their attachment links, admin accounts, blog posts, the audit log) lives in one
+MongoDB Atlas cluster, and MongoDB Atlas's **free M0 tier offers no automated or continuous
+backups**. Turning them on means moving the cluster to a paid tier (Cloud Backup snapshots). That
+is a business decision about cost, not something code can provide, and until it is made a lost or
+corrupted database is not recoverable.
+
+Until then there is a manual safety net. It protects only what existed at the moment it was run,
+and only if a person remembers to run it:
+
+```bash
+pnpm --filter api run backup-db
+```
+
+It needs the [MongoDB Database Tools](https://www.mongodb.com/try/download/database-tools)
+(`mongodump`) on your `PATH`, and the same `apps/api/.env` the API uses (it reads `MONGODB_URI`).
+It writes one compressed archive, `apps/api/backups/nexastack-<UTC timestamp>.archive.gz`. The
+folder is git-ignored: **the archive contains client data and is not encrypted**, so copy it
+somewhere private and off the machine, and never commit or email it. The connection string is
+handed to `mongodump` through a temporary file, never on the command line.
+
+Restoring is deliberately not scripted, because a restore can overwrite live data. To restore into
+a **separate, empty database first** and inspect it before touching anything real:
+
+```bash
+mongorestore --uri="mongodb://localhost:27017" --gzip --archive=apps/api/backups/<file>.archive.gz \
+  --nsFrom="nexastack.*" --nsTo="nexastack_restore.*"
+```
+
+Restoring over the live database (`--drop`) replaces its collections with the archive's contents.
+Do that only deliberately, and take a fresh backup of the current state first.
+
 ## Deployment
 
 Planned: Vercel (`apps/web`), Render (`apps/api`), MongoDB Atlas and Cloudinary. The domain,

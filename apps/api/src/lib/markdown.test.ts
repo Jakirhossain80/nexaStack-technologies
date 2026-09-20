@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { isSafeUrl, renderInline, renderMarkdown } from './markdown.js';
+import { findUnsafeArticleHtml } from '@nexastack/shared';
+
+import { isSafeUrl, renderArticle, renderInline, renderMarkdown } from './markdown.js';
 
 /** Every tag name that appears in `html`, so a test can assert nothing unexpected was emitted. */
 function tagNames(html: string): Set<string> {
@@ -153,11 +155,92 @@ describe('renderMarkdown: XSS hardening', () => {
       assert.doesNotMatch(html, /href="\/\//, `protocol-relative href in: ${html}`);
       assert.doesNotMatch(html, /<script|<img|<svg|<iframe/i, `raw tag in: ${html}`);
     });
+
+    // The independent output check (also run by the public site before injecting stored HTML)
+    // must accept everything the renderer emits for the same hostile input, or a legitimate
+    // post containing this text would be refused, or worse, shown as the fallback.
+    it(`passes the article-HTML allow-list: ${name}`, () => {
+      assert.equal(findUnsafeArticleHtml(renderMarkdown(source).html), null);
+      assert.doesNotThrow(() => renderArticle(source));
+    });
   }
 
   it('keeps the words of a link whose target is rejected, but drops the link', () => {
     assert.equal(renderInline('[click me](javascript:alert(1))'), 'click me)');
     assert.equal(renderInline('[click me](//evil.example)'), 'click me');
+  });
+});
+
+describe('findUnsafeArticleHtml: the stored-HTML allow-list', () => {
+  it('accepts a realistic post covering every construct the renderer can emit', () => {
+    const source = [
+      '## Getting started',
+      '',
+      '### A [link](https://example.com/a?b=1&c=2), a [page](/services) and an [anchor](#top)',
+      '',
+      'Some **bold**, *italic* and `code` with <b>escaped</b> tags & an "ampersand".',
+      '',
+      '- one',
+      '- two',
+      '',
+      '1. first',
+      '',
+      '> a quote',
+      '',
+      '```ts',
+      'const a = "<b>" && 1;',
+      '```',
+    ].join('\n');
+    assert.equal(findUnsafeArticleHtml(renderMarkdown(source).html), null);
+    assert.equal(findUnsafeArticleHtml(''), null);
+    assert.equal(findUnsafeArticleHtml('plain text only'), null);
+  });
+
+  // Hand-written HTML, as it would look if it reached the database WITHOUT going through the renderer.
+  const hostile: readonly [name: string, html: string][] = [
+    ['script tag', '<p>hi</p><script>alert(1)</script>'],
+    ['upper-case script tag', '<SCRIPT>alert(1)</SCRIPT>'],
+    ['img onerror', '<p><img src=x onerror=alert(1)></p>'],
+    ['svg onload', '<svg onload="alert(1)"></svg>'],
+    ['iframe', '<iframe src="https://evil.example"></iframe>'],
+    ['style tag', '<style>body{display:none}</style>'],
+    ['event handler on an allowed tag', '<p onclick="alert(1)">x</p>'],
+    ['event handler on a link', '<a href="/ok" onmouseover="alert(1)">x</a>'],
+    ['style attribute', '<p style="position:fixed">x</p>'],
+    ['javascript link', '<a href="javascript:alert(1)">x</a>'],
+    ['mixed-case javascript link', '<a href="JaVaScRiPt:alert(1)">x</a>'],
+    ['numeric-entity javascript link', '<a href="&#106;avascript:alert(1)">x</a>'],
+    ['named-entity javascript link', '<a href="java&Tab;script:alert(1)">x</a>'],
+    ['data link', '<a href="data:text/html;base64,PHNjcmlwdD4=">x</a>'],
+    ['protocol-relative link', '<a href="//evil.example/x">x</a>'],
+    ['single-quoted attribute', "<a href='/ok'>x</a>"],
+    ['unquoted attribute', '<a href=/ok>x</a>'],
+    ['attribute breakout', '<a href="/ok"onmouseover="alert(1)">x</a>'],
+    ['id with a quote-like character', '<h2 id="a b">x</h2>'],
+    ['class outside the language- pattern', '<code class="x y">x</code>'],
+    ['rel other than noopener noreferrer', '<a href="/ok" rel="opener">x</a>'],
+    ['attribute on a closing tag', '<p>x</p onclick="1">'],
+    ['raw > in text', '<p>a > b</p>'],
+    ['raw < in text', '<p>a < b</p>'],
+    ['unterminated tag', '<p>x</p><a href="/ok"'],
+    ['html comment', '<p>x</p><!-- hidden -->'],
+    ['CDATA', '<![CDATA[ <script>x</script> ]]>'],
+    ['tag name not on the allow-list', '<h1>x</h1>'],
+    ['data-attribute', '<p data-x="1">x</p>'],
+    ['null byte in a link', '<a href="https://a.example/\u0000">x</a>'],
+  ];
+
+  for (const [name, html] of hostile) {
+    it(`rejects: ${name}`, () => {
+      assert.notEqual(findUnsafeArticleHtml(html), null, `should have been rejected: ${html}`);
+    });
+  }
+});
+
+describe('renderArticle', () => {
+  it('returns exactly what renderMarkdown returns for input it accepts', () => {
+    const source = '## Title\n\nBody with a [link](/x).';
+    assert.deepEqual(renderArticle(source), renderMarkdown(source));
   });
 });
 

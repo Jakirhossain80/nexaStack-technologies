@@ -95,32 +95,27 @@ export async function uploadBufferToCloudinary(
   return { url, bytes: data.bytes, format: data.format ?? '' };
 }
 
-export type SniffedFileType = 'application/pdf' | 'image/png' | 'image/jpeg';
+// File-type detection by magic number is `sniffFileType` in `@nexastack/shared`: the one implementation,
+// shared with apps/api (which serves and accepts these files), so the two cannot disagree. The upload
+// route imports it from there.
 
 /**
- * Reads the first bytes of a file to identify its real type by magic number, so a renamed file
- * (e.g. `payload.exe` saved as `payload.pdf`) can't pass by declared MIME type or extension
- * alone — the actual server-side check root CLAUDE.md 15 and this task's honesty note 6 require.
+ * `attachments` on a quotation submission are URLs the browser sends back after uploading, so they are
+ * untrusted input: nothing stops a client posting `javascript:…` or a link into another folder or
+ * account. This accepts only the exact canonical shape `uploadBufferToCloudinary` produces: https,
+ * `res.cloudinary.com`, THIS account, `authenticated` delivery, inside the quotations folder, a plain
+ * id, an allowed extension, no query string or fragment. apps/api re-validates the stored value with the
+ * same rule before it ever fetches a file (`parseStoredAttachmentUrl`); this is the earlier check, so
+ * junk is not stored at all. With no Cloudinary account configured no upload can have happened, so no
+ * attachment is acceptable.
  */
-export function sniffFileType(bytes: Uint8Array): SniffedFileType | null {
-  if (bytes.length >= 4 && bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46) {
-    return 'application/pdf'; // %PDF
-  }
-  if (
-    bytes.length >= 8 &&
-    bytes[0] === 0x89 &&
-    bytes[1] === 0x50 &&
-    bytes[2] === 0x4e &&
-    bytes[3] === 0x47 &&
-    bytes[4] === 0x0d &&
-    bytes[5] === 0x0a &&
-    bytes[6] === 0x1a &&
-    bytes[7] === 0x0a
-  ) {
-    return 'image/png';
-  }
-  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
-    return 'image/jpeg'; // JPEG SOI marker
-  }
-  return null;
+const OWN_ATTACHMENT_PATH =
+  /^(?:image|raw)\/authenticated\/v\d+\/nexastack\/quotations\/[A-Za-z0-9_-]+\.(?:pdf|png|jpe?g)$/i;
+
+export function isOwnAttachmentUrl(value: string): boolean {
+  const cloudName = serverEnv.CLOUDINARY_CLOUD_NAME;
+  if (!cloudName || value.length > 2048) return false;
+
+  const prefix = `https://res.cloudinary.com/${cloudName}/`;
+  return value.startsWith(prefix) && OWN_ATTACHMENT_PATH.test(value.slice(prefix.length));
 }

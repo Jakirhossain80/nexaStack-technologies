@@ -6,8 +6,10 @@ import { Schema, model, models, type InferSchemaType, type Model } from 'mongoos
  * and the explicit collection name in step with the API model. Nothing in `apps/web` may write
  * to this collection, and every public query must filter on `status: 'published'`.
  *
- * `contentHtml` is trusted: the API's markdown renderer escapes everything it does not emit
- * itself, so `ArticleBody` may render it with `dangerouslySetInnerHTML`.
+ * `contentHtml` is produced only by the API's markdown renderer, which escapes everything it does not
+ * emit itself. It is still NOT taken on trust: `ArticleBody` re-checks it against the shared
+ * article-HTML allow-list (`findUnsafeArticleHtml`) before rendering it with
+ * `dangerouslySetInnerHTML`, so a value that reached the database by any other route is not injected.
  */
 const tocItemSchema = new Schema(
   {

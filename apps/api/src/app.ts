@@ -37,7 +37,27 @@ export function createApp(): Express {
 
   app.set('trust proxy', env.TRUST_PROXY);
 
-  app.use(helmet());
+  // Helmet's defaults plus a tightened CSP. This API only ever returns JSON (and streams an
+  // attachment as a download): no browser renders a page from it, and it never loads Cloudinary or
+  // Turnstile in a browser (Cloudinary is reached server-to-server here; Turnstile runs in the web
+  // app). So the honest policy allows nothing at all, instead of listing origins it never uses.
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        useDefaults: false,
+        directives: {
+          'default-src': ["'none'"],
+          'frame-ancestors': ["'none'"],
+          'base-uri': ["'none'"],
+          'form-action': ["'none'"],
+        },
+      },
+      referrerPolicy: { policy: 'no-referrer' },
+      // Helmet's default adds `includeSubDomains`. Left off, matching the web app's header, until the
+      // domain is chosen (root CLAUDE.md 22.1): it applies to every subdomain and is hard to undo.
+      strictTransportSecurity: { maxAge: 31_536_000, includeSubDomains: false },
+    }),
+  );
   app.use(cors(corsOptions));
   app.use(cookieParser());
   // Before express.json, so body-parser rejections (malformed JSON, too large) have a request id.

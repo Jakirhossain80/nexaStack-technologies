@@ -70,7 +70,15 @@ export async function POST(request: Request): Promise<NextResponse<ApiResponse<u
 
   const verification = await verifyTurnstileToken(
     typeof turnstileToken === 'string' ? turnstileToken : undefined,
+    'contact',
   );
+  if (verification.outcome === 'unavailable') {
+    return jsonError(
+      503,
+      ERROR_CODES.SERVICE_UNAVAILABLE,
+      'Sending messages is temporarily unavailable. Please email or call us instead, or try again later.',
+    );
+  }
   if (verification.outcome === 'failed') {
     return jsonError(
       400,

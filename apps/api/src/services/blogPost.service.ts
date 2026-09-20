@@ -14,7 +14,7 @@ import mongoose, { type Types } from 'mongoose';
 import { resolveCover, type CoverInput, type ResolvedCover } from '../lib/blogCover.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../lib/errors.js';
 import { escapeRegex, skipFor, toPaginated } from '../lib/listQuery.js';
-import { renderMarkdown } from '../lib/markdown.js';
+import { renderArticle } from '../lib/markdown.js';
 import { findFreeSlug, slugify } from '../lib/slug.js';
 import { BlogCategory } from '../models/BlogCategory.js';
 import { BlogPost, type BlogPostDocument } from '../models/BlogPost.js';
@@ -181,7 +181,7 @@ export async function createPost(
     );
   }
 
-  const { html, tableOfContents } = renderMarkdown(input.contentMarkdown);
+  const { html, tableOfContents } = renderArticle(input.contentMarkdown);
   const cover = await resolveCoverForSave(input);
 
   let created;
@@ -257,7 +257,7 @@ export async function updatePost(
     post.slug = input.slug;
   }
 
-  const { html, tableOfContents } = renderMarkdown(input.contentMarkdown);
+  const { html, tableOfContents } = renderArticle(input.contentMarkdown);
   const cover = await resolveCoverForSave(input);
 
   post.title = input.title;

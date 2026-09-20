@@ -45,9 +45,11 @@ export interface TurnstileWidgetProps {
 
 /**
  * Cloudflare Turnstile widget, loaded via its plain `<script>` (no npm package needed — root
- * CLAUDE.md 5/21: no new dependency beyond the approved stack). Renders nothing when
- * `NEXT_PUBLIC_TURNSTILE_SITE_KEY` isn't configured; `/api/contact` treats a missing token as
- * "verification not yet configured" and skips the check rather than blocking submissions.
+ * CLAUDE.md 5/21: no new dependency beyond the approved stack). Used by both public forms
+ * (`/contact` and the `/quotation` final step). Renders nothing when
+ * `NEXT_PUBLIC_TURNSTILE_SITE_KEY` isn't configured. Whether a form then still submits is decided
+ * server-side (`lib/turnstile.ts`): skipped with a warning in development, refused (503) in
+ * production, so a missing key can never quietly disable bot protection on a live site.
  */
 export function TurnstileWidget({ onVerify, onExpire }: TurnstileWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -71,7 +73,7 @@ export function TurnstileWidget({ onVerify, onExpire }: TurnstileWidgetProps) {
         });
       })
       .catch((err: unknown) => {
-        console.error('[contact] Turnstile widget failed to load', err);
+        console.error('[turnstile] Widget failed to load', err);
       });
 
     return () => {

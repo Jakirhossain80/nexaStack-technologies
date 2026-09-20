@@ -2,10 +2,12 @@ import { quotationSchema, ERROR_CODES, type ApiResponse } from '@nexastack/share
 import mongoose from 'mongoose';
 import { NextResponse } from 'next/server';
 
+import { isOwnAttachmentUrl } from '@/lib/cloudinary';
 import { connectToDatabase } from '@/lib/mongodb';
 import { QuotationSubmission } from '@/lib/models/QuotationSubmission';
 import { notifyQuotationSubmission } from '@/lib/notifications';
 import { checkQuotationRateLimit, getClientIp } from '@/lib/quotationRateLimit';
+import { verifyTurnstileToken } from '@/lib/turnstile';
 
 /**
  * Public `/quotation` submission endpoint. Runs in the Node.js runtime (the default for Route
@@ -57,7 +59,11 @@ export async function POST(request: Request): Promise<NextResponse<ApiResponse<u
     );
   }
 
-  const parsed = await quotationSchema.safeParseAsync(body);
+  // The Turnstile token rides in the same JSON body but is not part of the shared quotation schema.
+  const { turnstileToken, ...candidate } =
+    body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
+
+  const parsed = await quotationSchema.safeParseAsync(candidate);
   if (!parsed.success) {
     const details = parsed.error.issues.map((issue) => ({
       location: 'body' as const,
@@ -69,6 +75,43 @@ export async function POST(request: Request): Promise<NextResponse<ApiResponse<u
       ERROR_CODES.VALIDATION_ERROR,
       'Some of the information sent needs attention. Check the details and try again.',
       details,
+    );
+  }
+
+  // Attachments are URLs the browser sends back after uploading; only ones this site's own upload
+  // route could have produced are accepted (the shared schema only checks that they look like URLs).
+  const badAttachment = (parsed.data.attachments ?? []).findIndex((url) => !isOwnAttachmentUrl(url));
+  if (badAttachment !== -1) {
+    return jsonError(
+      400,
+      ERROR_CODES.VALIDATION_ERROR,
+      'Some of the information sent needs attention. Check the details and try again.',
+      [
+        {
+          location: 'body',
+          path: `attachments.${badAttachment}`,
+          message: 'That attachment was not uploaded through this form. Remove it and attach the file again.',
+        },
+      ],
+    );
+  }
+
+  const verification = await verifyTurnstileToken(
+    typeof turnstileToken === 'string' ? turnstileToken : undefined,
+    'quotation',
+  );
+  if (verification.outcome === 'unavailable') {
+    return jsonError(
+      503,
+      ERROR_CODES.SERVICE_UNAVAILABLE,
+      'Quotation requests are temporarily unavailable. Please email or call us instead, or try again later.',
+    );
+  }
+  if (verification.outcome === 'failed') {
+    return jsonError(
+      400,
+      ERROR_CODES.VALIDATION_ERROR,
+      'The verification challenge could not be confirmed. Please try again.',
     );
   }
 

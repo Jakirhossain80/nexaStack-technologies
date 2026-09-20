@@ -221,3 +221,7 @@ export {
 } from './constants/quotationStatus.js';
 export { ERROR_CODES, type ErrorCode } from './constants/errorCodes.js';
 export { COUNTRIES } from './constants/countries.js';
+
+// Pure, environment-agnostic helpers that must behave identically in both apps
+export { sniffFileType, type SniffedFileType } from './utils/sniffFileType.js';
+export { findUnsafeArticleHtml, isSafeUrl } from './utils/articleHtml.js';

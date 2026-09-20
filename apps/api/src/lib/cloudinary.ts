@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { Readable } from 'node:stream';
 import type { ReadableStreamReadResult } from 'node:stream/web';
 
-import { ATTACHMENT_MAX_SIZE_BYTES } from '@nexastack/shared';
+import { ATTACHMENT_MAX_SIZE_BYTES, sniffFileType, type SniffedFileType } from '@nexastack/shared';
 
 /**
  * Server-side access to quotation attachments stored in Cloudinary. Built from `fetch` and Node's
@@ -202,31 +202,13 @@ export async function fetchAssetMetadata(
   }
 }
 
-export type SniffedAttachmentType = 'application/pdf' | 'image/png' | 'image/jpeg';
-
-/** The real type of a file from its first bytes, so only a PDF, PNG or JPEG is ever served. */
-export function sniffAttachmentType(bytes: Uint8Array): SniffedAttachmentType | null {
-  if (bytes.length >= 4 && bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46) {
-    return 'application/pdf';
-  }
-  if (
-    bytes.length >= 8 &&
-    bytes[0] === 0x89 &&
-    bytes[1] === 0x50 &&
-    bytes[2] === 0x4e &&
-    bytes[3] === 0x47 &&
-    bytes[4] === 0x0d &&
-    bytes[5] === 0x0a &&
-    bytes[6] === 0x1a &&
-    bytes[7] === 0x0a
-  ) {
-    return 'image/png';
-  }
-  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
-    return 'image/jpeg';
-  }
-  return null;
-}
+/**
+ * The real type of a file from its first bytes, so only a PDF, PNG or JPEG is ever served. This is
+ * the ONE shared implementation (`@nexastack/shared`), also used by apps/web's quotation upload; the
+ * names below are kept so this module's callers and tests are unchanged.
+ */
+export type SniffedAttachmentType = SniffedFileType;
+export const sniffAttachmentType = sniffFileType;
 
 export type AttachmentFetchFailure = 'unavailable' | 'not-allowed-type' | 'too-large';
 

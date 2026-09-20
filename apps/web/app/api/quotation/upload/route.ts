@@ -2,11 +2,12 @@ import {
   ATTACHMENT_ACCEPTED_TYPES,
   ATTACHMENT_MAX_SIZE_BYTES,
   ERROR_CODES,
+  sniffFileType,
   type ApiResponse,
 } from '@nexastack/shared';
 import { NextResponse } from 'next/server';
 
-import { isCloudinaryConfigured, sniffFileType, uploadBufferToCloudinary } from '@/lib/cloudinary';
+import { isCloudinaryConfigured, uploadBufferToCloudinary } from '@/lib/cloudinary';
 import { checkQuotationUploadRateLimit, getClientIp } from '@/lib/quotationRateLimit';
 
 /**

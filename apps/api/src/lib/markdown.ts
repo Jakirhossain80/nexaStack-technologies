@@ -1,4 +1,4 @@
-import type { BlogTocItem } from '@nexastack/shared';
+import { findUnsafeArticleHtml, isSafeUrl, type BlogTocItem } from '@nexastack/shared';
 
 import { slugify } from './slug.js';
 
@@ -41,18 +41,10 @@ export function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char] ?? char);
 }
 
-/** `https://…`, `http://…`, `mailto:…`, `/path`, or `#fragment` — and nothing else. */
-export function isSafeUrl(url: string): boolean {
-  // Any control character, space or backslash: browsers normalise `/\host` to `//host`, and
-  // embedded control characters are a classic filter-bypass for `javascript:`.
-  // eslint-disable-next-line no-control-regex
-  if (url.length === 0 || /[\u0000- \u007f-\u009f\\]/.test(url)) return false;
-  // A host must follow `http(s)://`; `mailto:` must be followed by an address.
-  if (/^https?:\/\/[^/]/i.test(url) || /^mailto:[^/]/i.test(url)) return true;
-  if (url.startsWith('#')) return true;
-  // A single leading slash; `//` would be protocol-relative (off-site).
-  return url.startsWith('/') && !url.startsWith('//');
-}
+// The link allow-list lives in `@nexastack/shared` so the save-time and render-time checks of the
+// rendered HTML (`findUnsafeArticleHtml`) use the SAME rule this renderer applies. Re-exported here
+// because the renderer's own tests and callers import it from this module.
+export { isSafeUrl };
 
 const CODE_SPAN = /`([^`\n]+)`/g;
 const LINK = /\[([^\]\n]+)\]\(([^)\s]+)\)/g;
@@ -224,4 +216,20 @@ export function renderMarkdown(source: string): RenderedMarkdown {
   }
 
   return { html: html.join('\n'), tableOfContents };
+}
+
+/**
+ * `renderMarkdown` plus an independent check of its OUTPUT against the article-HTML allow-list in
+ * `@nexastack/shared` (the same check the public site runs before injecting stored HTML). Use this
+ * wherever the HTML is going to be STORED: if the renderer ever regressed and emitted something outside
+ * the grammar, the save fails (a logged 500) instead of persisting markup that would be injected into
+ * the public page. The message names the rule broken, never the author's text.
+ */
+export function renderArticle(source: string): RenderedMarkdown {
+  const rendered = renderMarkdown(source);
+  const problem = findUnsafeArticleHtml(rendered.html);
+  if (problem) {
+    throw new Error(`Rendered article HTML failed the allow-list check: ${problem}`);
+  }
+  return rendered;
 }

@@ -9,6 +9,9 @@ build/
 *.tsbuildinfo
 next-env.d.ts
 
+# Database dumps from `pnpm --filter api run backup-db` — they contain client data, never commit
+backups/
+
 # Environment — commit only the .env.example files
 .env
 .env.*

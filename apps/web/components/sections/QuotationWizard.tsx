@@ -13,6 +13,7 @@ import { QuotationStepFinal } from '@/components/sections/QuotationStepFinal';
 import { QuotationStepProject } from '@/components/sections/QuotationStepProject';
 import { QuotationStepRequirements } from '@/components/sections/QuotationStepRequirements';
 import { Button } from '@/components/ui/Button';
+import { TurnstileWidget } from '@/components/ui/Turnstile';
 
 export interface QuotationFormFields {
   fullName: string;
@@ -107,6 +108,16 @@ export function QuotationWizard() {
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
   const [serverError, setServerError] = useState<string | null>(null);
   const [referenceNumber, setReferenceNumber] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | undefined>(undefined);
+  // A Turnstile token is single-use, so after any failed submit the widget is remounted (new key)
+  // to issue a fresh one; re-sending the spent token would be refused until a page reload.
+  const [turnstileKey, setTurnstileKey] = useState(0);
+  const handleTurnstileVerify = useCallback((token: string) => setTurnstileToken(token), []);
+  const handleTurnstileExpire = useCallback(() => setTurnstileToken(undefined), []);
+  const resetTurnstile = useCallback(() => {
+    setTurnstileToken(undefined);
+    setTurnstileKey((key) => key + 1);
+  }, []);
   const announcement = `Step ${currentStep} of ${TOTAL_STEPS}: ${STEP_NAMES[currentStep - 1]}`;
   const hasRestored = useRef(false);
 
@@ -181,13 +192,14 @@ export function QuotationWizard() {
       const response = await fetch('/api/quotation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, turnstileToken }),
       });
       const body = (await response.json()) as ApiResponse<{ referenceNumber: string }>;
 
       if (!body.success) {
         setServerError(body.error.message);
         setStatus('idle');
+        resetTurnstile();
         window.scrollTo(0, 0);
         return;
       }
@@ -205,6 +217,7 @@ export function QuotationWizard() {
         'Something went wrong sending your request. Please check your connection and try again.',
       );
       setStatus('idle');
+      resetTurnstile();
       window.scrollTo(0, 0);
     }
   });
@@ -245,6 +258,15 @@ export function QuotationWizard() {
           {currentStep === 4 && <QuotationStepBudget form={form} />}
           {currentStep === 5 && <QuotationStepFinal form={form} onEditStep={goToStep} />}
         </div>
+
+        {/* Bot check on the final step only; renders nothing until a Turnstile site key is set. */}
+        {currentStep === TOTAL_STEPS && (
+          <TurnstileWidget
+            key={turnstileKey}
+            onVerify={handleTurnstileVerify}
+            onExpire={handleTurnstileExpire}
+          />
+        )}
 
         <div className="flex items-center justify-between gap-4 border-t border-default pt-6">
           <Button
