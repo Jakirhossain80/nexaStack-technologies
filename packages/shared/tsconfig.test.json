@@ -1,0 +1,9 @@
+{
+  // Type-checks the test files (which need Node's types) without loosening the build config:
+  // tsconfig.json keeps `types: []` and excludes tests, so `dist` ships no test code and a stray
+  // `process` in real source still fails to compile.
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "types": ["node"], "noEmit": true },
+  "include": ["src"],
+  "exclude": []
+}

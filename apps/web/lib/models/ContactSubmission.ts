@@ -1,5 +1,9 @@
 import { ENQUIRY_STATUS, ENQUIRY_STATUSES } from '@nexastack/shared';
-import { Schema, model, models, type InferSchemaType } from 'mongoose';
+import mongoose, { type InferSchemaType } from 'mongoose';
+
+// Default import, then destructure: named value imports from 'mongoose' resolve under Next's bundler but not under
+// Node's own ESM loader (mongoose is CommonJS), which the integration tests use. Same objects, same behaviour.
+const { Schema, model, models } = mongoose;
 
 /**
  * A validated `/contact` page submission. Fields mirror `contactFormSchema` from

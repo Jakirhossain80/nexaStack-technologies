@@ -64,6 +64,7 @@ export default function ProcessPage() {
                 step={step}
                 position={index + 1}
                 side={index % 2 === 0 ? 'right' : 'left'}
+                titleAs="h2"
               />
             ))}
           </ol>

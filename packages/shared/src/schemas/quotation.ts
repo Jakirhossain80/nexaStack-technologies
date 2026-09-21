@@ -107,10 +107,21 @@ export const ATTACHMENT_MAX_SIZE_BYTES = 10 * 1024 * 1024;
 export const ATTACHMENT_ACCEPTED_TYPES = ['application/pdf', 'image/png', 'image/jpeg'] as const;
 export const ATTACHMENT_ACCEPTED_EXTENSIONS = ['.pdf', '.png', '.jpg', '.jpeg'] as const;
 
+/** `YYYY-MM-DD` that is also a real calendar day: `2026-02-31` and `2026-13-45` match the shape but are not dates. */
+function isRealCalendarDate(value: string): boolean {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return false;
+  const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  const date = new Date(Date.UTC(year, month - 1, day));
+  // Date.UTC rolls an overflowing day or month into the next one, so a real date round-trips unchanged.
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+
 const dateFieldSchema = (label: string) =>
   z
     .string({ error: `Please choose ${label}` })
-    .regex(/^\d{4}-\d{2}-\d{2}$/, { error: `Please choose ${label} using the date picker` });
+    .regex(/^\d{4}-\d{2}-\d{2}$/, { error: `Please choose ${label} using the date picker` })
+    .refine(isRealCalendarDate, { error: `Please choose ${label} using the date picker` });
 
 /**
  * Base object schema (pre-refine) so per-step `.pick()` subsets can be derived from it —
@@ -176,7 +187,13 @@ const quotationObjectSchema = z.object({
     needsAuthentication: z.boolean({ error: 'Please choose yes or no' }),
     integrations: optionalTrimmedString(1000, 'Please shorten this to 1,000 characters or fewer'),
     referenceWebsites: z
-      .array(z.string().trim().pipe(z.url({ error: 'Please enter a valid URL, like https://example.com' })))
+      // http(s) only: a reference website is a web page. `z.url()` alone accepts any scheme (`javascript:`, `file:`).
+      .array(
+        z
+          .string()
+          .trim()
+          .pipe(z.url({ protocol: /^https?$/, error: 'Please enter a valid URL, like https://example.com' })),
+      )
       .max(5, { error: 'Please list 5 or fewer reference websites' })
       .optional(),
 

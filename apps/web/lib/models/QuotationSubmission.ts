@@ -1,5 +1,9 @@
 import { QUOTATION_STATUS, QUOTATION_STATUSES } from '@nexastack/shared';
-import { Schema, model, models, type InferSchemaType } from 'mongoose';
+import mongoose, { type InferSchemaType } from 'mongoose';
+
+// Default import, then destructure: named value imports from 'mongoose' resolve under Next's bundler but not under
+// Node's own ESM loader (mongoose is CommonJS), which the integration tests use. Same objects, same behaviour.
+const { Schema, model, models } = mongoose;
 
 /**
  * Internal admin commentary on a request (Quotation Management). Never shown to the client. The

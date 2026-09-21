@@ -9,6 +9,11 @@ export interface ProcessStepProps {
   side: 'left' | 'right';
   /** Display position, 1-indexed — used only for the decorative badge text. */
   position: number;
+  /**
+   * The heading level of the step title. `h3` by default: on the homepage the steps sit under a section
+   * `h2`. On `/process` the steps ARE the page's sections (h1, then the steps), so it passes `h2`.
+   */
+  titleAs?: 'h2' | 'h3';
 }
 
 const INLINE_LINK_CLASSES =
@@ -28,7 +33,7 @@ const INLINE_LINK_CLASSES =
  * cyan out as a text colour, so neither "gradient background" nor "gradient text" for the
  * number is safe as a literal full fill.
  */
-export function ProcessStep({ step, side, position }: ProcessStepProps) {
+export function ProcessStep({ step, side, position, titleAs: Title = 'h3' }: ProcessStepProps) {
   const inlineLink = step.inlineLink;
   const isRight = side === 'right';
 
@@ -44,7 +49,7 @@ export function ProcessStep({ step, side, position }: ProcessStepProps) {
       </div>
 
       <div className={cn(isRight ? 'lg:col-start-3 lg:text-left' : 'lg:col-start-1 lg:text-right')}>
-        <h3 className="text-card font-semibold text-primary">{step.title}</h3>
+        <Title className="text-card font-semibold text-primary">{step.title}</Title>
         <p className="mt-2 text-body text-secondary">
           {inlineLink
             ? step.description.split(inlineLink.text).map((part, index, parts) => (

@@ -91,6 +91,10 @@ nexastack/
 
 Each app has its own `CLAUDE.md` with app-specific conventions. Read the nearest one.
 
+`apps/e2e/` is a third workspace holding only the Playwright browser tests (section 20); it has no
+application code and nothing imports it. `scripts/` holds `run-integration.mjs` and `lib/mongod.mjs`,
+the runner that starts a throwaway local MongoDB for the integration tests.
+
 ---
 
 ## 4. Company facts
@@ -189,6 +193,10 @@ All versions are exact pins. `zod`, `typescript` and `@types/node` are pinned on
 | api (dev) | @types/cors | 2.8.19 |
 | api (dev) | @types/cookie-parser | 1.4.10 |
 | web, api (dev) | @types/node | 22.20.2 |
+| shared (dev) | @types/node | 22.20.2 *(catalog; typing the tests only, kept out of the build)* |
+| api, web, shared (dev) | tsx | 4.23.13 *(catalog; runs the `node:test` suites)* |
+| e2e (dev) | @playwright/test | 1.63.0 |
+| e2e (dev) | axe-core | 4.13.0 *(was already resolved transitively via eslint-plugin-jsx-a11y)* |
 
 **Held back deliberately:** TypeScript 7 (`typescript-eslint` 8.70 supports `<6.1.0`) and
 ESLint 10 (`eslint-config-next` 16.3.5 bundles `eslint-plugin-react` 7.37.5, whose peer range
@@ -217,7 +225,10 @@ pnpm --filter api dev             # Express only
 pnpm build                        # build all
 pnpm lint                         # ESLint across workspaces
 pnpm typecheck                    # tsc --noEmit across workspaces
-pnpm test                         # test suites
+pnpm test                         # unit tests, every workspace (seconds, no database, no browser)
+pnpm test:integration             # real HTTP + real MongoDB (starts a throwaway local mongod)
+pnpm test:e2e                     # browser tests, Chromium only (builds and boots the whole stack)
+pnpm test:e2e:full                # + Firefox, WebKit, Pixel/iPhone/iPad profiles (pre-release)
 pnpm format                       # Prettier write
 ```
 
@@ -630,13 +641,29 @@ provider API key, Turnstile keys, Sentry DSN, public site URL, public API URL.
 
 ## 20. Testing
 
-Minimum coverage expected:
+Three tiers plus a browser tier, all committed and re-runnable. `node:test` (built in, run through `tsx`)
+is the only unit/integration runner: do not add Vitest or Jest alongside it.
 
-- Unit tests for Zod schemas and service-layer logic
-- Integration tests for auth, contact and quotation endpoints
-- An E2E smoke test of the contact and quotation flows — these are the paths where a
-  silent failure costs a real client
-- axe-core accessibility assertions on key pages
+| Tier | Command | Needs | What it covers |
+|---|---|---|---|
+| Unit | `pnpm test` | nothing | every Zod schema and status table (`packages/shared`), `whatsapp`/`notifications`/`theme`/rate-limit/Turnstile/route-consistency logic (`apps/web/lib`), and the API's own suites (`apps/api/src/**/*.test.ts`) |
+| Integration | `pnpm test:integration` | a local `mongod` | the real Express app over HTTP (`apps/api/src/integration/*.itest.ts`: auth, RBAC across all three roles, CSRF, injection, publishing state machine, XSS, enquiry/quotation workflows, users) and the real `/api/contact` and `/api/quotation` Route Handlers (`apps/web/integration/*.itest.ts`) |
+| Browser, fast | `pnpm test:e2e` | mongod, a production build | Chromium: link crawl, SEO, axe, forms, theme (incl. no-flash on hard reload), responsive x theme, admin roles, publishing on the public site |
+| Browser, full | `pnpm test:e2e:full` | + Firefox/WebKit installed | the same suite on three engines and three device profiles; run before a release |
+
+Rules that keep the tiers trustworthy:
+
+- **Never point a test at a real database.** `scripts/lib/mongod.mjs` starts a throwaway loopback `mongod`; every harness
+  refuses anything but a loopback host and a database name ending `_test`. Fixtures are obviously synthetic (`Test User`,
+  `test@example.com`). Tests never read `.env*`.
+- **The API and web app are tested as they run**, not against mocks. Only Cloudflare's siteverify call is stubbed (offline
+  integration tier); the browser tier uses Cloudflare's published always-pass test keys and needs internet, and skips visibly
+  (never passes) if it is offline.
+- **Email delivery is NOT tested** (no provider exists, section 22 item 4). Tests prove the notification *hook* is called with
+  the right data at the right moment and never on a failure. **Screen-reader behaviour is NOT tested**: axe-core runs the
+  WCAG 2.1 A/AA rules automatically and says nothing about assistive technology.
+- `apps/web` test files are type-checked by `next build` (they sit in the web tsconfig), so they must typecheck.
+- A known defect is tracked with `test.fail(true, reason)` and a comment, never by deleting or loosening the assertion.
 
 ---
 

@@ -2,5 +2,5 @@
   // Production build: same as tsconfig.json (which `typecheck` and the editor use, and which
   // therefore also checks the tests) minus the test files, so `dist` ships no test code.
   "extends": "./tsconfig.json",
-  "exclude": ["src/**/*.test.ts"]
+  "exclude": ["src/**/*.test.ts", "src/integration/**"]
 }

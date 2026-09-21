@@ -8,7 +8,7 @@ export interface WhyChooseItemProps {
 }
 
 const INLINE_LINK_CLASSES =
-  'rounded-field text-primary-blue underline-offset-4 focus-ring hover:text-primary-blue-hover hover:underline';
+  'rounded-field text-primary-blue underline underline-offset-4 focus-ring hover:text-primary-blue-hover';
 
 /**
  * One plain trust statement: icon, title, description. Deliberately not a card — no
