@@ -713,9 +713,9 @@ Do not silently resolve these. Ask.
    Route Handlers and reserve Express for the admin API. Resolved 2026-09-18 **for contact
    only**: `/contact` submits to `apps/web/app/api/contact/route.ts` (a Route Handler), not
    the Express API. The Express contact scaffold (`apps/api/src/routes/contact.routes.ts`
-   and its controller/service/schema) is left in place but orphaned — wired, never called by
-   the live site — rather than deleted, pending a separate decision on removing or
-   repurposing it. Quotation's backend is still unresolved.
+   and its controller/service/schema) is retired: valid requests return HTTP 410
+   `ENDPOINT_RETIRED`, never an acknowledgement. Validation and rate limiting remain in place.
+   The live site does not call it. Quotation's backend is still unresolved.
 6. **General email address** — `nexastack@mail.com` is a free generic mailbox and weakens
    credibility. Move to `hello@<domain>` once registered. Do not publish an unmonitored
    address.

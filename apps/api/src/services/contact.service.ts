@@ -1,18 +1,15 @@
-import type { ContactInput } from '@nexastack/shared';
+import { ERROR_CODES, type ContactInput } from '@nexastack/shared';
 
-export interface ContactSubmissionResult {
-  received: true;
-}
+import { AppError } from '../lib/errors.js';
 
 /**
- * Handle a validated contact enquiry. Business logic only: never touches req, res or next.
- *
- * TODO(contact): implement per apps/api/CLAUDE.md section 8 —
- *   1. verify the Cloudflare Turnstile token server-side (field to be added to contactSchema)
- *   2. persist the enquiry to MongoDB first
- *   3. then send the notification to the firm and the confirmation to the sender
- *      (a failed email must not lose the enquiry)
+ * Retired scaffold. The public website accepts enquiries through its own /api/contact
+ * Route Handler. Never acknowledge a message here: this endpoint does not save it.
  */
-export async function submitContact(_input: ContactInput): Promise<ContactSubmissionResult> {
-  return { received: true };
+export async function submitContact(_input: ContactInput): Promise<never> {
+  throw new AppError(
+    410,
+    ERROR_CODES.ENDPOINT_RETIRED,
+    'This contact endpoint has been retired. Your message was not saved. Please submit it using the contact form at /contact on the NexaStack Technologies website.',
+  );
 }

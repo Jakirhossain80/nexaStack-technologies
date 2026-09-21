@@ -11,10 +11,11 @@ export const contactRouter = Router();
  * @openapi
  * /api/v1/contact:
  *   post:
- *     summary: Submit a contact enquiry
+ *     summary: Retired contact endpoint
  *     description: >
  *       Public. Rate limited to 10 requests per IP per 15 minutes. The body is validated with
- *       contactSchema from @nexastack/shared. Not yet persisted or emailed.
+ *       contactSchema from @nexastack/shared. Valid requests return 410 ENDPOINT_RETIRED;
+ *       nothing is persisted or emailed. Use the public website's /contact form instead.
  *     tags: [Contact]
  *     security: []
  *     requestBody:
@@ -30,8 +31,8 @@ export const contactRouter = Router();
  *               subject: { type: string, minLength: 3, maxLength: 150 }
  *               message: { type: string, minLength: 20, maxLength: 5000 }
  *     responses:
- *       200:
- *         description: Enquiry received. Envelope with data { received true }.
+ *       410:
+ *         description: Endpoint retired (ENDPOINT_RETIRED). The message was not saved.
  *       400:
  *         description: Validation failed (VALIDATION_ERROR with field-level details) or invalid JSON (INVALID_JSON).
  *       413:

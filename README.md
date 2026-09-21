@@ -93,16 +93,18 @@ it with `pnpm build:shared`.
 | ------ | ----------------- | -------------------------------------------------------- |
 | GET    | `/health`         | Process liveness, no dependencies                        |
 | GET    | `/health/ready`   | 200 when MongoDB is connected, otherwise 503             |
-| POST   | `/api/v1/contact` | Example endpoint: rate limited, validated, not persisted |
+| POST   | `/api/v1/contact` | Retired: valid requests return 410 `ENDPOINT_RETIRED`; no message is saved |
 
 Every response uses the envelope `{ "success": true, "data": … }` or
 `{ "success": false, "error": { "code", "message", "details"? } }`.
 
-```bash
-curl -X POST http://localhost:4000/api/v1/contact \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Ayesha Rahman","email":"ayesha@example.com","subject":"New website","message":"We need a new marketing site for our clinic."}'
-```
+Open the web application's `/contact` page to submit an enquiry. The form uses
+`POST /api/contact` on the **web origin**, with its shared form schema and Turnstile
+verification. It reports success only after database persistence.
+
+The Express `/api/v1/contact` scaffold is retained only to return an explicit retirement
+error to older callers. Invalid bodies still return 400 and excessive requests return 429.
+It never redirects or forwards submitted personal data, and never reports an enquiry as received.
 
 ## Project structure
 

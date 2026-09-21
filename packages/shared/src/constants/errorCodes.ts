@@ -7,6 +7,7 @@ export const ERROR_CODES = {
   /** The signed-in account is still on its temporary password: only changing it is allowed. */
   PASSWORD_CHANGE_REQUIRED: 'PASSWORD_CHANGE_REQUIRED',
   NOT_FOUND: 'NOT_FOUND',
+  ENDPOINT_RETIRED: 'ENDPOINT_RETIRED',
   CONFLICT: 'CONFLICT',
   PAYLOAD_TOO_LARGE: 'PAYLOAD_TOO_LARGE',
   RATE_LIMITED: 'RATE_LIMITED',
